@@ -9,14 +9,17 @@ class CustomTopo (Topo):
         # Create server host
         server = self.addHost('h0')
 
+        # Create switch
+        switch = self.addSwitch('s1')
+        self.addLink(server, switch, cls=TCLink, loss=loss_percent)
+
         # Create other hosts
         for i in range(1, num_hosts+1):
             host_name = 'h{}'.format(i)
             host = self.addHost(host_name)
 
             # Create links from server to other hosts
-            self.addLink(server, host, cls=TCLink,
-                         intf=TCIntf, loss=loss_percent)
+            self.addLink(switch, host, cls=TCLink, loss=loss_percent)
 
 
 topos = {'customTopo': CustomTopo}
