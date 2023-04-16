@@ -3,6 +3,56 @@ from lib.constant import (DEFAULT_DOWNLOAD_DST,
                           DEFAULT_SV_STORAGE, LOCALHOST,
                           DEFAULT_SV_PORT)
 
+# ====================== Pub functions ======================
+
+
+# Returns an object containing all parsed args for the server program
+def parse_server_args():
+    parser = _get_parser_with_common_args("Start the server")
+
+    parser.add_argument(
+        "-s",
+        "--storage",
+        default=DEFAULT_SV_STORAGE,
+        help="specify the server's storage path",
+    )
+
+    args = parser.parse_args()
+
+    return args
+
+
+# Returns an object containing all parsed args for the upload program
+def parse_upload_args():
+    parser = _get_parser_for_client_programs("Upload a file to the server")
+
+    parser.add_argument(
+        "-s", "--src", dest="src", metavar="FILEPATH",
+        required=True,
+        help="path to the file to upload"
+    )
+
+    args = parser.parse_args()
+
+    return args
+
+
+# Returns an object containing all parsed args for the download program
+def parse_download_args():
+    parser = _get_parser_for_client_programs("Download a file from the server")
+
+    parser.add_argument(
+        "-d", "--dst", dest="dst", metavar="FILEPATH",
+        default=DEFAULT_DOWNLOAD_DST,
+        help="destination file path"
+    )
+
+    args = parser.parse_args()
+
+    return args
+
+
+# ====================== Priv functions ======================
 
 # Returns a parser with the common arguments for the client and server
 def _get_parser_with_common_args(command_description: str):
@@ -36,22 +86,6 @@ def _get_parser_with_common_args(command_description: str):
     return parser
 
 
-# Returns an object containing all parsed args for the server program
-def parse_server_args():
-    parser = _get_parser_with_common_args("Start the server")
-
-    parser.add_argument(
-        "-s",
-        "--storage",
-        default=DEFAULT_SV_STORAGE,
-        help="specify the server's storage path",
-    )
-
-    args = parser.parse_args()
-
-    return args
-
-
 # Returns a parser with the common arguments for
 # the client programs (upload and download)
 def _get_parser_for_client_programs(command_description: str):
@@ -79,33 +113,3 @@ def _get_parser_for_client_programs(command_description: str):
     )
 
     return parser
-
-
-# Returns an object containing all parsed args for the upload program
-def parse_upload_args():
-    parser = _get_parser_for_client_programs("Upload a file to the server")
-
-    parser.add_argument(
-        "-s", "--src", dest="src", metavar="FILEPATH",
-        required=True,
-        help="path to the file to upload"
-    )
-
-    args = parser.parse_args()
-
-    return args
-
-
-# Returns an object containing all parsed args for the download program
-def parse_download_args():
-    parser = _get_parser_for_client_programs("Download a file from the server")
-
-    parser.add_argument(
-        "-d", "--dst", dest="dst", metavar="FILEPATH",
-        default=DEFAULT_DOWNLOAD_DST,
-        help="destination file path"
-    )
-
-    args = parser.parse_args()
-
-    return args
