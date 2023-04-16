@@ -20,11 +20,13 @@
 
 ### Integrantes
 
-- Luciano Gamberale - [lucianogamberale](https://github.com/lucianogamberale)
-- Erick Martinez - [erick12m](https://github.com/erick12m)
-- Facundo Monpelat - [fmonpelat](https://github.com/fmonpelat)
-- Lionel Guglielmone - [lionelguglielmone](https://github.com/lionelguglielmone)
-- Miguel Vasquez - [MiguelV5](https://github.com/MiguelV5)
+| Nombre                                                              | Padrón |
+| ------------------------------------------------------------------- | ------ |
+| [Luciano Martin Gamberale](https://github.com/lucianogamberale)     | 105892 |
+| [Erick Martinez Quintero](https://github.com/erick12m)              | 103745 |
+| [Facundo Monpelat](https://github.com/fmonpelat)                    |  92716 |
+| [Lionel Guglielmone](https://github.com/lionelguglielmone)          |  96963 |
+| [Miguel Vasquez](https://github.com/MiguelV5)                       | 107378 |
 
 ---
 
