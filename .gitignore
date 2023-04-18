@@ -1,0 +1,10 @@
+sv_storage/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+#vscode config (solo tiene el "python.formatting.provider": "autopep8")
+.vscode/
+
