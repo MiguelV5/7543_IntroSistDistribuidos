@@ -8,3 +8,4 @@ __pycache__/
 #vscode config (solo tiene el "python.formatting.provider": "autopep8")
 .vscode/
 
+*.log

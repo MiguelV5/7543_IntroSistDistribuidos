@@ -83,6 +83,18 @@ def _get_parser_with_common_args(command_description: str):
         help="the server's listening port",
     )
 
+    exclusive_group2 = parser.add_mutually_exclusive_group()
+    exclusive_group2.add_argument(
+        "-saw",
+        "--stop_and_wait",
+        action='store_true',
+        help="choose Stop and Wait transference")
+    exclusive_group2.add_argument(
+        "-sr",
+        "--selective_repeat",
+        action='store_true',
+        help="choose Selective Repeat transference")
+
     return parser
 
 
@@ -90,19 +102,6 @@ def _get_parser_with_common_args(command_description: str):
 # the client programs (upload and download)
 def _get_parser_for_client_programs(command_description: str):
     parser = _get_parser_with_common_args(command_description)
-
-    # Si se decide agregar para despues:
-    # exclusive_group = parser.add_mutually_exclusive_group()
-    # exclusive_group.add_argument(
-    #     "-saw",
-    #     "--stop_and_wait",
-    #     action='store_true',
-    #     help="choose Stop and Wait transference")
-    # exclusive_group.add_argument(
-    #     "-gbn",
-    #     "--go_back_n",
-    #     action='store_true',
-    #     help="choose Go Back N transference")
 
     parser.add_argument(
         "-n", "--name",
