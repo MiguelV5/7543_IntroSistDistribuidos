@@ -32,7 +32,7 @@ class ClientRDT:
             str(self.host), str(self.port)))
         self.sock = sock
 
-        #set protocol args
+        # set protocol args
         self.protocolArgs["socket"] = self.sock
         self.protocolArgs["addr"] = (self.host, self.port)
         self.protocolArgs["timeout"] = 5
@@ -45,5 +45,5 @@ class ClientRDT:
             clientNotConnectedError = "Client not connected to server"
             logging.error(clientNotConnectedError)
             raise Exception(clientNotConnectedError)
-        
+
         self.protocol.send(data)
