@@ -14,7 +14,11 @@ def main():
         logging.error("Error: " + str(e))
         exit(1)
     client.connect()
-    client.send(0)
+
+    # for testing we create a bytes object with 3072 bytes (should make 3 packets)
+    data = b'1' * 3072
+    
+    client.send(data)
 
 
 if __name__ == "__main__":
