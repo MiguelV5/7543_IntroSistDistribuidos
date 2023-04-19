@@ -66,7 +66,10 @@ options:
 ```
 
 Inicia el server.
-Si no se indica el `STORAGE` se guardará en `./misc/sv_storage/` 
+
+***Nota***:
+Si no se indica el `STORAGE` se guardará en `./misc/sv_storage/` .
+Si no se indica el protocolo de manejo de errores, se elige Stop And Wait por defecto.
 
 ## Ejecución download
 
@@ -93,9 +96,11 @@ options:
 ```
 
 Descargar un archivo del server. 
-Es necesario indicar el nombre del archivo (`FILENAME`)
 
+***Nota***:
+Es necesario indicar el nombre del archivo (`FILENAME`).
 Si no se brinda `FILEPATH`: por defecto se almacena en `./misc/downloads/`.
+Si no se indica el protocolo de manejo de errores, se elige Stop And Wait por defecto.
 
 ## Ejecución upload
 
@@ -124,7 +129,9 @@ options:
 
 
 Este programa permite al usuario subir un nuevo archivo al servidor, en caso de que ya exista será remplazado.
-Es necesario indicar el nombre del archivo (`FILENAME`)
 
+***Nota***:
+Es necesario indicar el nombre del archivo (`FILENAME`).
 Si no se brinda `FILEPATH`: por defecto se busca en `./misc/files_to_upload`.
+Si no se indica el protocolo de manejo de errores, se elige Stop And Wait por defecto
 
