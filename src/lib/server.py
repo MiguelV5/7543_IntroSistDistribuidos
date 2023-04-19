@@ -33,7 +33,9 @@ class ServerRDT:
         # listen for incoming messages
         while True:
             packet, addr = sock.recvfrom(self.mss + len(self.header))
-            logging.info("Received data from: {} data: {}".format(addr, str(packet)))
+            logging.info("from: {}".format(addr))
+            logging.info(
+                "Received data from: {} data: {}".format(addr, str(packet)))
 
             # TODO: possible solution of concurrent connections?
             # dictionary of keys with address value threads
