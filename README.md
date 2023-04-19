@@ -46,88 +46,85 @@ sudo mn --custom ./src/topologia.py --topo customTopo,num_hosts=4,loss_percent=1
 ## Ejecución start-server
 
 ```
-python3 src/start-server.py -h
-usage: start-server.py [-h] [-v | -q] [-H ADDR] [-p PORT] [-s STORAGE]
+$ python3 src/start-server.py -h
+usage: start-server.py [-h] [-v | -q] [-H ADDR] [-p PORT] [-saw | -sr] [-s STORAGE]
 
-description: Starts the server
+Start the server
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -v, --verbose         increase output verbosity
   -q, --quiet           decrease output verbosity
-  -H ADDR, --host ADDR  server IP address
-  -p PORT, --port PORT  server port
+  -H ADDR, --host ADDR  the server's listening IP address
+  -p PORT, --port PORT  the server's listening port
+  -saw, --stop_and_wait
+                        choose Stop and Wait transference
+  -sr, --selective_repeat
+                        choose Selective Repeat transference
   -s STORAGE, --storage STORAGE
-                        specify the storage path
+                        specify the server's storage path
 ```
 
 Inicia el server.
-Si no se indica el `STORAGE` se guardará en `/sv_storage` 
+Si no se indica el `STORAGE` se guardará en `./misc/sv_storage/` 
 
 ## Ejecución download
 
-
-<!--- POSIBLE PARA AÑADIR DESPUES:  
-
-[-saw | -gbn GO_BACK_N]   
-
-  -saw, --stop_and_wait
-                        choose Stop and Wait transfer
-  -gbn GO_BACK_N, --go_back_n GO_BACK_N
-                        choose Go Back N transfer
-
---->
-
-
 ```
-python3 src/download_file.py -h
-usage: download_file.py [-h] [-v | -q] [-H ADDR] [-p PORT] [-d FILEPATH] [-n FILENAME]
+$ python3 src/download_file.py -h
+usage: download.py [-h] [-v | -q] [-H ADDR] [-p PORT] [-saw | -sr] -n FILENAME [-d FILEPATH]
 
-description: Downloads a specific file from the server
+Download a file from the server
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -v, --verbose         increase output verbosity
   -q, --quiet           decrease output verbosity
-  -H ADDR, --host ADDR  server IP address
-  -p PORT, --port PORT  server port
+  -H ADDR, --host ADDR  the server's listening IP address
+  -p PORT, --port PORT  the server's listening port
+  -saw, --stop_and_wait
+                        choose Stop and Wait transference
+  -sr, --selective_repeat
+                        choose Selective Repeat transference
+  -n FILENAME, --name FILENAME
+                        name of the file to request to the server
   -d FILEPATH, --dst FILEPATH
                         destination file path
-  -n FILENAME, --name FILENAME
-                        file name
 ```
 
 Descargar un archivo del server. 
 Es necesario indicar el nombre del archivo (`FILENAME`)
 
-Si no se brinda `FILEPATH`: por defecto se almacena en `???` <!---( Ver despues )--->.
+Si no se brinda `FILEPATH`: por defecto se almacena en `./misc/downloads/`.
 
 ## Ejecución upload
 
 ```
-python3 src/upload.py -h
+$ python3 src/upload.py -h
 
-usage: upload.py [-h] [-v | -q] [-H ADDR] [-p PORT] [-s FILEPATH]
-                 [-n FILENAME] 
+usage: upload.py [-h] [-v | -q] [-H ADDR] [-p PORT] [-saw | -sr] -n FILENAME -s FILEPATH
 
-description: Uploads a file to the server
+Upload a file to the server
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -v, --verbose         increase output verbosity
   -q, --quiet           decrease output verbosity
-  -H ADDR, --host ADDR  server IP address
-  -p PORT, --port PORT  server port
-  
-  -s FILEPATH, --src FILEPATH
-                        source file path
+  -H ADDR, --host ADDR  the server's listening IP address
+  -p PORT, --port PORT  the server's listening port
+  -saw, --stop_and_wait
+                        choose Stop and Wait transference
+  -sr, --selective_repeat
+                        choose Selective Repeat transference
   -n FILENAME, --name FILENAME
-                        file name
+                        name of the file to request to the server
+  -s FILEPATH, --src FILEPATH
+                        path to the file to upload
 ```
 
 
 Este programa permite al usuario subir un nuevo archivo al servidor, en caso de que ya exista será remplazado.
 Es necesario indicar el nombre del archivo (`FILENAME`)
 
-Si no se brinda `FILEPATH`: por defecto se busca en `???` <!---( Ver despues )--->.
+Si no se brinda `FILEPATH`: por defecto se busca en `./misc/files_to_upload`.
 
