@@ -3,10 +3,9 @@ from lib.server import ServerRDT
 
 def main():
     args = parse_server_args()
-    print(args)
 
     # create new server from class
-    server = ServerRDT(args)
+    server = ServerRDT(args.host, args.port)
     server.create()
 
 if __name__ == "__main__":

@@ -1,5 +1,9 @@
 from lib.parser import parse_upload_args
 from lib.client import ClientRDT
+import logging
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("Upload")
 
 def main():
     args = parse_upload_args()
@@ -7,7 +11,7 @@ def main():
     try:
         client = ClientRDT(args.host, args.port)
     except Exception as e:
-        print("Error: " + str(e))
+        logging.error("Error: " + str(e))
         exit(1)
     client.connect()
     client.send(0)
