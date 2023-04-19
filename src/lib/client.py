@@ -1,9 +1,12 @@
 import socket
 import time
 import logging
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger("ClientRDT")
+
 
 class ClientRDT:
     def __init__(self, host, port):
@@ -15,7 +18,8 @@ class ClientRDT:
         logger.info("Client RDT running")
         # create a socket with udp protocol
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        logger.info("Client connecting to: {}:{}".format(str(self.host), str(self.port)))
+        logger.info("Client connecting to: {}:{}".format(
+            str(self.host), str(self.port)))
 
         # try to connect to the server if not return exception
         try:
@@ -23,9 +27,11 @@ class ClientRDT:
         except Exception as e:
             logger.error("Error: " + str(e))
             # create new exception
-            raise Exception("Error connecting to server: {}:{}".format(str(self.host), str(self.port)))
-        
-        logger.info("Client connected to: {}:{}".format(str(self.host), str(self.port)))
+            raise Exception("Error connecting to server: {}:{}".format(
+                str(self.host), str(self.port)))
+
+        logger.info("Client connected to: {}:{}".format(
+            str(self.host), str(self.port)))
         self.sock = sock
 
     def send(self, data):
