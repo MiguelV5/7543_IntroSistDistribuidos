@@ -24,6 +24,6 @@ class ServerRDT:
         # listen for incoming messages
         while True:
             data, addr = sock.recvfrom(1024)
-            logger.info("New Message from: {}".fprmat(str(addr)))
+            logger.info("New Message from: {}".format(str(addr)))
             logger.info("Message: {} received".format(data.decode("utf-8")))
             sock.sendto(data, addr)
