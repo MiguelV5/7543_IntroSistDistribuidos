@@ -1,0 +1,20 @@
+04:21:09 root INFO Client RDT running
+04:21:09 root INFO Client connecting to: localhost:14000
+04:21:09 root INFO Client connected to: localhost:14000
+04:21:10 root INFO Sending: 1
+04:24:37 INFO Client RDT running
+04:24:37 INFO Client connecting to: localhost:14000
+04:24:37 INFO Client connected to: localhost:14000
+04:24:38 INFO Sending: 1
+04:25:06 INFO Client RDT running
+04:25:06 INFO Client connecting to: localhost:14000
+04:25:06 INFO Client connected to: localhost:14000
+04:25:07 INFO Sending: 1
+04:28:53 INFO Client RDT running
+04:28:53 INFO Client connecting to: localhost:14000
+04:28:53 INFO Client connected to: localhost:14000
+04:28:54 INFO Sending: 1
+2023-04-19 04:29:44,156 INFO Client RDT running
+2023-04-19 04:29:44,156 INFO Client connecting to: localhost:14000
+2023-04-19 04:29:44,156 INFO Client connected to: localhost:14000
+2023-04-19 04:29:45,158 INFO Sending: 1
