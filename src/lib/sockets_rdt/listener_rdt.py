@@ -53,8 +53,7 @@ class ListenerRDT():
         stream = StreamRDT.from_listener(
             Protocol.STOP_AND_WAIT,
             external_address[0], external_address[1],
-            self.host, self.port + self.client_counter,
-            segment
+            segment, self.host, self.port + self.client_counter
         )
 
         return stream

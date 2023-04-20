@@ -59,6 +59,6 @@ class ClientRDT:
     def upload(self):
 
         StreamRDT.connect(
-            self.protocol,  self.external_host, self.external_port, 12093,
+            self.protocol,  self.external_host, self.external_port,
             TransferType.UPLOAD
         )
