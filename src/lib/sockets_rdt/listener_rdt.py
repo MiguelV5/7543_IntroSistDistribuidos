@@ -3,9 +3,9 @@
 import random
 import logging
 import socket
-from lib.protocols.stream_rdt import StreamRDT
-from lib.segment_handler.header_rdt import HeaderRDT
-from lib.segment_handler.segment_rdt import SegmentRDT
+from lib.sockets_rdt.stream_rdt import StreamRDT
+from lib.segment_encoding.header_rdt import HeaderRDT
+from lib.segment_encoding.segment_rdt import SegmentRDT
 
 
 class ListenerRDT():
@@ -16,23 +16,28 @@ class ListenerRDT():
         self.sv_port = sv_port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(('', self.sv_port))
+        self.socket.settimeout(5)
 
     def listen(self):
         while True:
-            data, addr = self.socket.recvfrom(HeaderRDT.size())
+            try:
+                data, addr = self.socket.recvfrom(HeaderRDT.size())
+            except TimeoutError:
+                continue
 
             try:
                 segment = SegmentRDT.from_bytes(data)
                 # check header
                 break
-            except ValueError:
-                logging.debug("Invalid segment received")
+            except Exception as e:
+                logging.debug("Invalid segment received: {}".format(e))
+                continue
 
         stream = StreamRDT(self.sv_host, self.sv_port,
                            addr[0], addr[1], random.randint(0, 2**31),
                            segment.header.sqn
                            )
         stream.send_handshake()
-        #recibir un handshake
-        #devolver un StreamRDT
+
+        # devolver un StreamRDT
         # stream.send()

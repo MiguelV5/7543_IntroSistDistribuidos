@@ -7,7 +7,13 @@ class HeaderRDT:
 
     PACKET_FORMAT = '!III??'
 
-    def __init__(self, data_size, seq_num, ack_num, syn, fin):
+    def __init__(self,
+                 data_size: ctypes.c_uint32,
+                 seq_num: ctypes.c_uint32,
+                 ack_num: ctypes.c_uint32,
+                 syn: ctypes.c_bool,
+                 fin: ctypes.c_bool
+                 ):
         self.data_size: ctypes.c_uint32 = data_size
         self.seq_num: ctypes.c_uint32 = seq_num
         self.ack_num: ctypes.c_uint32 = ack_num
@@ -27,5 +33,3 @@ class HeaderRDT:
         data_size, seq_num, ack_num, syn, fin = struct.unpack(
             cls.PACKET_FORMAT, data)
         return cls(data_size, seq_num, ack_num, syn, fin)
-
-# Faltaria un protocolo entre Server y Client para que se puedan comunicar sobre si es upload o download/ hash sha1/ tamaño

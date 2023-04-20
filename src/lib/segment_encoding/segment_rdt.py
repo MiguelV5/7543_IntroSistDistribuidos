@@ -1,13 +1,13 @@
 
 
-from lib.segment_handler.header_rdt import HeaderRDT
+from lib.segment_encoding.header_rdt import HeaderRDT
 
 
 class SegmentRDT:
 
-    MAX_LENGTH = 1024
+    MAX_SEGMENT_SIZE = 1024
 
-    def __init__(self, header, data):
+    def __init__(self, header: HeaderRDT, data: bytes):
         self.header: HeaderRDT = header
         self.data = data
 
