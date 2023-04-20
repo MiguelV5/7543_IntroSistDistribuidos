@@ -65,8 +65,6 @@ class StopAndWait():
                     "Acknowledgement sequence: {} acknowledgement number: {}"
                     .format(sq, ackNum)
                 )
-                print("ackNum: {} sq: {} self.sq: {}".format(
-                    ackNum, sq, self.seq))
                 if ackNum == 1 and sq == self.seq:
                     if self.debug:
                         logging.info(

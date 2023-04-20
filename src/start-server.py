@@ -9,7 +9,7 @@ def main():
 
     # create new server from class
     server = ServerRDT(args.host, args.port)
-    server.create()
+    server.run()
 
 
 if __name__ == "__main__":

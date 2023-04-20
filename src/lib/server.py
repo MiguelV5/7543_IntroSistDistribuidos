@@ -6,18 +6,19 @@ from lib.protocols.stop_and_wait import StopAndWait
 
 class ServerRDT:
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, protocol=StopAndWait):
         self.host = host
         self.port = port
-        self.protocol = None
+        self.protocol = protocol
         self.protocolArgs = {}
         self.mss = 1024
         self.header = {}
         self.header["sqn"] = 0
         self.header["ack"] = 0
 
-    def create(self, protocol=StopAndWait, protocolArgs={}):
+    def run(self, protocol=StopAndWait, protocolArgs={}):
         logging.info("Server RDT running")
+
         # create a socket with udp protocol
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # bind the socket to the port
