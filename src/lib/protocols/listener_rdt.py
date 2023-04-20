@@ -33,5 +33,6 @@ class ListenerRDT():
                            segment.header.sqn
                            )
         stream.send_handshake()
-
-        stream.send()
+        #recibir un handshake
+        #devolver un StreamRDT
+        # stream.send()
