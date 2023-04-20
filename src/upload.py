@@ -13,12 +13,13 @@ def main():
     except Exception as e:
         logging.error("Error: " + str(e))
         exit(1)
-    client.connect()
+    client.upload()
 
-    # for testing we create a bytes object with 3072 bytes (should make 3 packets)
-    data = b'1' * 3072
-    
-    client.send(data)
+    # for testing we create a bytes object
+    #  with 3072 bytes (should make 3 packets)
+    # data = b'1' * 3072
+
+    # client.send(data)
 
 
 if __name__ == "__main__":

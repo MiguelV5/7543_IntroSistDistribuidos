@@ -12,7 +12,7 @@ from lib.sockets_rdt.stream_rdt import StreamRDT
 
 class ListenerRDT():
 
-    def __init__(self, host,  port):
+    def __init__(self, host, port):
 
         self.host = host
         self.port = port
@@ -21,10 +21,10 @@ class ListenerRDT():
         self.socket.bind(('', self.port))
         self.socket.settimeout(5)
 
-    def _check_first_header(self, header):
+    def _check_first_header(self, header: HeaderRDT):
         if header.data_size != HandshakeHeaderRDT.size():
             raise Exception("Invalid data size")
-        if header.ack != 0:
+        if header.ack_num != StreamRDT.START_ACK:
             raise Exception("Invalid ack number")
         if not header.syn:
             raise Exception("Invalid syn number")
@@ -36,6 +36,7 @@ class ListenerRDT():
 
         while True:
             try:
+                logging.info("Waiting for incoming connection")
                 data, external_address = self.socket.recvfrom(HeaderRDT.size())
                 segment = SegmentRDT.from_bytes(data)
                 self._check_first_header(segment.header)
@@ -46,6 +47,8 @@ class ListenerRDT():
             except Exception as e:
                 logging.debug("Invalid segment received: {}".format(e))
                 continue
+
+        logging.info("Coonection received from {}".format(external_address))
 
         stream = StreamRDT.from_listener(
             Protocol.STOP_AND_WAIT,

@@ -1,13 +1,12 @@
-from enum import Enum
 import ctypes
 
 
-class Protocol(Enum):
+class Protocol:
     STOP_AND_WAIT: ctypes.c_int8 = 0
     SELECTIVE_REPEAT: ctypes.c_int8 = 1
 
 
-class TransferType(Enum):
+class TransferType:
     UPLOAD: ctypes.c_int8 = 0
     DOWNLOAD: ctypes.c_int8 = 1
 

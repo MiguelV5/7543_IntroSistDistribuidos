@@ -1,5 +1,6 @@
 
 import ctypes
+import logging
 import struct
 
 from lib.constant import Protocol, TransferType
@@ -32,10 +33,13 @@ class HandshakeHeaderRDT():
     def as_bytes(self):
         return struct.pack(self.PACKET_FORMAT, self.transfer_type,
                            self.protocol, self.file_name.encode('utf-8'),
-                           self.file_size, self.sha1_hash.encode('utf-8'))
+                           self.file_size, self.sha1_hash)
 
     @classmethod
     def from_bytes(cls, data):
+        logging.error('     {}'.format(len(data)))
+        logging.error('     {}'.format(data))
+        # LUCIANP Y MIGUEL (NO TOCAR)
         transfer_type, protocol, file_name, file_size, sha1_hash = \
             struct.unpack(
                 cls.PACKET_FORMAT, data

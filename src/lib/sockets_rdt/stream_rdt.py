@@ -12,7 +12,7 @@ from lib.segment_encoding.segment_rdt import SegmentRDT
 
 class StreamRDT():
 
-    START_ACK = 1
+    START_ACK = 0
 
     MAX_HANDSHAKE_TIMEOUT_RETRIES = 5
     MAX_READ_TIMEOUT_RETRIES = 3
@@ -25,6 +25,7 @@ class StreamRDT():
         self.host = host
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.bind(('', self.port))
         self.socket.settimeout(DEFAULT_TIMEOUT)
 
         self.seq_num = seq_num
@@ -32,13 +33,14 @@ class StreamRDT():
 
     @classmethod
     def from_listener(
-            cls, protocol, external_host, external_port, host, port,  segment
+        cls, protocol, external_host, external_port, host, port,
+        segment: SegmentRDT
     ):
         stream = cls(
             protocol, external_host, external_port, host,
-            port, random.randint(0, 2**31), segment.ack_num
+            port, random.randint(0, 2**31), segment.header.ack_num
         )
-        stream.socket.bind(('', stream.external_port))
+
         handshake_header = HandshakeHeaderRDT.from_bytes(segment.data)
         stream.run_handshake_as_listener(handshake_header)
         return stream
@@ -46,14 +48,16 @@ class StreamRDT():
     @classmethod
     def connect(
         cls, protocol, external_host,
-        external_port, host, port, transfer_type
+        external_port, port, transfer_type
     ):
         stream = cls(
-            protocol, external_host, external_port, host,
+            protocol, external_host, external_port, 'localhost',
             port, random.randint(0, 2**31),
             StreamRDT.START_ACK
         )
-        stream.socket.bind(('', stream.port))
+        logging.error("Connecting to {}:{} with my port: {}".format(
+            external_host, external_port, port))
+        # stream.socket.bind(('localhost', stream.port))
         stream.run_handshake_as_initiator(transfer_type)
         return stream
 
@@ -99,7 +103,7 @@ class StreamRDT():
     # ======================== FOR PRIVATE USE ========================
 
     def _send_base(self, data: bytes, syn, fin):
-        header = HeaderRDT(self.seq_num, self.ack_num, syn, fin)
+        header = HeaderRDT(len(data), self.seq_num, self.ack_num, syn, fin)
         segment = SegmentRDT(header, data)
 
         self.socket.sendto(
