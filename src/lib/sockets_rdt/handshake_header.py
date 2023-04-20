@@ -15,7 +15,7 @@ class HandshakeHeaderRDT():
         self.transfer_type: ctypes.c_uint8 = transfer_type
         self.protocol: ctypes.c_uint8 = protocol
         self.file_name: str = file_name
-        self.file_size: ctypes.c_int32 = file_size
+        self.file_size: ctypes.c_uint32 = file_size
         self.sha1_hash = sha1_hash
 
     @classmethod

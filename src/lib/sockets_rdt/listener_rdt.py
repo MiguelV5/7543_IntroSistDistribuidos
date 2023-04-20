@@ -37,7 +37,7 @@ class ListenerRDT():
                            addr[0], addr[1], random.randint(0, 2**31),
                            segment.header.sqn
                            )
-        stream.send_handshake()
+        stream.run_handshake_as_server()
 
         # devolver un StreamRDT
         # stream.send()
