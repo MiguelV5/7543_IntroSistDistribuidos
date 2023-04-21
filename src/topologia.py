@@ -3,7 +3,7 @@ from mininet.link import TCLink
 
 
 class CustomTopo (Topo):
-    def __init__(self, num_hosts, loss_percent):
+    def __init__(self, num_clients, loss_percent):
         # Initialize topology
         Topo.__init__(self)
         # Create server host
@@ -14,7 +14,7 @@ class CustomTopo (Topo):
         self.addLink(server, switch, cls=TCLink, loss=loss_percent)
 
         # Create other hosts
-        for i in range(1, num_hosts):
+        for i in range(1, num_clients + 1):
             host_name = 'h{}'.format(i)
             host = self.addHost(host_name)
 

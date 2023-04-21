@@ -39,7 +39,7 @@ sockets y los principios básicos de la transferencia de datos confiable (RDT).
 
 ## Para correr la topología:
 ```bash
-sudo mn --custom ./src/topologia.py --topo customTopo,num_hosts=4,loss_percent=10 --mac -x
+sudo mn --custom ./src/topologia.py --topo customTopo,num_clients=4,loss_percent=10 --mac -x
 ```
 
 
