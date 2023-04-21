@@ -2,7 +2,7 @@
 
 import logging
 import socket
-from lib.sockets_rdt.handshake_header import HandshakeHeaderRDT
+from lib.sockets_rdt.application_header import ApplicationHeaderRDT
 from lib.constant import DEFAULT_TIMEOUT, SelectedTransferType
 
 from lib.segment_encoding.header_rdt import HeaderRDT
@@ -40,7 +40,7 @@ class StreamRDT():
     @classmethod
     def from_listener(
         cls, protocol, external_host, external_port,
-        segment: SegmentRDT, host, port
+        segment: SegmentRDT, host, port = None
     ):
         stream = cls(
             protocol, external_host, external_port,
@@ -48,9 +48,9 @@ class StreamRDT():
             host, port,
         )
 
-        handshake_header = HandshakeHeaderRDT.from_bytes(segment.data)
-        stream.run_handshake_as_listener(handshake_header)
-        return stream, handshake_header
+        app_header = ApplicationHeaderRDT.from_bytes(segment.data)
+        stream.run_handshake_as_listener(app_header)
+        return stream, app_header
         # TODO: Siempre devolver el Transfer Information porquee las
         # capas de arriba no deberian saber lo del handsahke header
 
@@ -140,12 +140,11 @@ class StreamRDT():
 
     def _read_base(self, buf_size) -> bytes:
         retries = 0
+        logging.info("Trying to read data from {}:{} ->  {}:{}".format(
+                    self.external_host, self.external_port, self.host, self.port))
         while retries < self.MAX_READ_TIMEOUT_RETRIES:
             try:
-                logging.info("Trying to read data from {}:{} ->  {}:{}".format(
-                    self.external_host, self.external_port, self.host, self.port))
-                segment_as_bytes, external_address = self.socket.recvfrom(
-                    buf_size + HeaderRDT.size())
+                segment_as_bytes, external_address = self.socket.recvfrom(HeaderRDT.size())
                 segment = SegmentRDT.from_bytes(segment_as_bytes)
                 return segment, external_address
             except TimeoutError:
@@ -166,20 +165,20 @@ class StreamRDT():
     def _read_handshake(self):
         try:
             segment, external_address = self._read_base(
-                HandshakeHeaderRDT.size())
+                ApplicationHeaderRDT.size())
         except TimeoutError:
             raise TimeoutError("Timeout while reading handshake")
 
-        return HandshakeHeaderRDT.from_bytes(segment.data), external_address
+        return ApplicationHeaderRDT.from_bytes(segment.data), external_address
 
-    def _base_handshake_messages_exchange(self, initial_handshake_header):
-        self._send_handshake(initial_handshake_header.as_bytes())
+    def _base_handshake_messages_exchange(self, initial_app_header: ApplicationHeaderRDT):
+        self._send_handshake(initial_app_header.as_bytes())
         try:
-            received_handshake_header, external_address = self._read_handshake()
+            received_app_header, external_address = self._read_handshake()
         except TimeoutError:
             raise TimeoutError("Timeout while reading handshake")
 
-        if not initial_handshake_header.equals(received_handshake_header):
+        if not initial_app_header.equals(received_app_header):
             raise ValueError("Handshake failed")
 
         logging.info("Succesfull Handshake Received from {}:{} ->  {}:{}".format(
@@ -194,21 +193,21 @@ class StreamRDT():
         # sale todo ok es porque lo que recibiò esta funcion es lo que
         # le llego por socket
 
-    def _client_handshake_messages_exchange(self, handshake_header_client):
+    def _client_handshake_messages_exchange(self, app_header_client):
         try:
-            self._base_handshake_messages_exchange(handshake_header_client)
+            self._base_handshake_messages_exchange(app_header_client)
         except TimeoutError:
             raise TimeoutError("Timeout while reading handshake")
-        self._send_handshake(handshake_header_client.as_bytes())
+        self._send_handshake(app_header_client.as_bytes())
 
     def _server_handshake_messages_exchange(
-        self, initial_handshake_header_client
+        self, initial_app_header_client
     ):
-        self._base_handshake_messages_exchange(initial_handshake_header_client)
+        self._base_handshake_messages_exchange(initial_app_header_client)
 
     #
     def run_handshake_as_initiator(self, transfer_type: SelectedTransferType):
-        handshake_header_client = HandshakeHeaderRDT(
+        app_header_client = ApplicationHeaderRDT(
             transfer_type,
             self.protocol, 'nombre',
             1000,
@@ -220,7 +219,7 @@ class StreamRDT():
         while retries < self.MAX_HANDSHAKE_TIMEOUT_RETRIES:
             try:
                 self._client_handshake_messages_exchange(
-                    handshake_header_client)
+                    app_header_client)
                 return
             except TimeoutError:
                 logging.debug("Timeout, retrying")
@@ -239,7 +238,7 @@ class StreamRDT():
     #
 
     def run_handshake_as_listener(
-            self, handshake_header_client: HandshakeHeaderRDT
+            self, app_header_client: ApplicationHeaderRDT
     ):
 
         # Start message exchange
@@ -247,7 +246,7 @@ class StreamRDT():
         while retries < self.MAX_HANDSHAKE_TIMEOUT_RETRIES:
             try:
                 self._server_handshake_messages_exchange(
-                    handshake_header_client
+                    app_header_client
                 )
             except TimeoutError:
                 logging.debug("Timeout, retrying")

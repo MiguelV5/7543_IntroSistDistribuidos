@@ -1,12 +1,11 @@
 
 import ctypes
-import logging
 import struct
 
 from lib.constant import SelectedProtocol, SelectedTransferType
 
 
-class HandshakeHeaderRDT():
+class ApplicationHeaderRDT():
 
     MAX_FILE_NAME = 40
     PACKET_FORMAT = '!BB40sI20s'
@@ -20,12 +19,12 @@ class HandshakeHeaderRDT():
         self.file_size: ctypes.c_uint32 = file_size
         self.sha1_hash = sha1_hash
 
-    def equals(self, other_handshake_header: 'HandshakeHeaderRDT'):
-        return self.transfer_type == other_handshake_header.transfer_type and \
-            self.protocol == other_handshake_header.protocol and \
-            self.file_name == other_handshake_header.file_name and \
-            self.file_size == other_handshake_header.file_size and \
-            self.sha1_hash == other_handshake_header.sha1_hash
+    def equals(self, app_header: 'ApplicationHeaderRDT'):
+        return self.transfer_type == app_header.transfer_type and \
+            self.protocol == app_header.protocol and \
+            self.file_name == app_header.file_name and \
+            self.file_size == app_header.file_size and \
+            self.sha1_hash == app_header.sha1_hash
 
     @classmethod
     def size(cls):

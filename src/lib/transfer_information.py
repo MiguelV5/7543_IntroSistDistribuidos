@@ -1,7 +1,7 @@
 
 import ctypes
 
-from lib.sockets_rdt.handshake_header import HandshakeHeaderRDT
+from lib.sockets_rdt.application_header import ApplicationHeaderRDT
 
 
 class TransferInformation():
@@ -13,10 +13,10 @@ class TransferInformation():
         self.sha1_hash = sha1_hash
 
     @classmethod
-    def from_handshake_header(cls, header_handshake: HandshakeHeaderRDT):
-        return cls(header_handshake.transfer_type,
-                   header_handshake.protocol,
-                   header_handshake.file_name,
-                   header_handshake.file_size,
-                   header_handshake.sha1_hash
+    def from_app_header(cls, header_app: ApplicationHeaderRDT):
+        return cls(header_app.transfer_type,
+                   header_app.protocol,
+                   header_app.file_name,
+                   header_app.file_size,
+                   header_app.sha1_hash
                    )

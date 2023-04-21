@@ -88,7 +88,7 @@ class StopAndWait():
     def send_ack(self, sequence_number, address):
         # send acknowledgement
         ack_packet = self.encodePacket(sequence_number, 1, b'')
-        print(str(ack_packet))
+        # print(str(ack_packet))
         self.socket.sendto(ack_packet, address)
 
     def receive(self, data, addr):

@@ -3,7 +3,7 @@
 import logging
 import socket
 from lib.constant import SelectedProtocol
-from lib.sockets_rdt.handshake_header import HandshakeHeaderRDT
+from lib.sockets_rdt.application_header import ApplicationHeaderRDT
 
 from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
@@ -22,7 +22,7 @@ class ListenerRDT():
         self.socket.settimeout(5)
 
     def _check_first_header(self, header: HeaderRDT):
-        if header.data_size != HandshakeHeaderRDT.size():
+        if header.data_size != ApplicationHeaderRDT.size():
             raise Exception("Invalid data size")
         if header.ack_num != StreamRDT.START_ACK:
             raise Exception("Invalid ack number")
@@ -33,23 +33,22 @@ class ListenerRDT():
 
     def listen(self):
         # TODO Logica de intentos
-
+        logging.info("Waiting for incoming connection")
         while True:
             try:
-                logging.info("Waiting for incoming connection")
                 data, external_address = self.socket.recvfrom(
-                    HeaderRDT.size() + HandshakeHeaderRDT.size())
+                    HeaderRDT.size() + ApplicationHeaderRDT.size())
                 segment = SegmentRDT.from_bytes(data)
                 self._check_first_header(segment.header)
                 self.client_counter += 1
                 break
-            except TimeoutError:
+            except socket.timeout:
                 continue
             except Exception as e:
                 logging.error("Invalid segment received: {}".format(e))
                 continue
 
-        logging.info("Coonection attempt from {}".format(external_address))
+        logging.info("Conection attempt from {}".format(external_address))
 
         # NOTE (Miguel): Añadido otro valor de retorno para tener la info
         #  correcta ya verificada del pedido del cliente tras el handshake.
@@ -57,12 +56,12 @@ class ListenerRDT():
         # NOTE 2: de paso ya arregle un monton de problemas relacionados a bytes.
         # Ahora hay que ver por que esta fallando el handshake en el cliente
         # Tira como que siempre esta recibiendo el handshake header
-        stream, successful_handshake_header = StreamRDT.from_listener(
+        stream, successful_app_header = StreamRDT.from_listener(
             SelectedProtocol.STOP_AND_WAIT,
             external_address[0], external_address[1],
-            segment, self.host, self.port + self.client_counter
+            segment, self.host
         )
 
         logging.info("Connection established with {}".format(external_address))
 
-        return stream, successful_handshake_header
+        return stream, successful_app_header
