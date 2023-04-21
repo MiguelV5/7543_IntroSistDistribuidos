@@ -1,53 +1,10 @@
 import logging
+from threading import Thread
 from lib.constant import SelectedProtocol
+from lib.sockets_rdt.application_header import ApplicationHeaderRDT
 
 from lib.sockets_rdt.listener_rdt import ListenerRDT
-
-# from lib.protocols.stop_and_wait import StopAndWait
-
-
-# class ServerRDT:
-
-#     def __init__(self, host, port, protocol=StopAndWait):
-#         self.host = host
-#         self.port = port
-#         self.protocol = protocol
-#         self.protocolArgs = {}
-#         self.mss = 1024
-#         self.header = {}
-#         self.header["sqn"] = 0
-#         self.header["ack"] = 0
-
-#     def run(self, protocol=StopAndWait, protocolArgs={}):
-#         logging.info("Server RDT running")
-
-#         # create a socket with udp protocol
-#         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#         # bind the socket to the port
-#         sock.bind((self.host, self.port))
-#         logging.info("Server running on port: {}".format(str(self.port)))
-
-#         # set protocol args
-#         self.protocolArgs["addr"] = (self.host, self.port)
-#         self.protocolArgs["socket"] = sock
-#         # set protocol
-#         self.protocol = protocol(**self.protocolArgs)
-
-#         # listen for incoming messages
-#         while True:
-#             packet, addr = sock.recvfrom(self.mss + len(self.header))
-#             logging.info("from: {}".format(addr))
-#             logging.info(
-#                 "Received data from: {} data: {}".format(addr, str(packet)))
-
-#             # TODO: possible solution of concurrent connections?
-#             # dictionary of keys with address value threads
-#             # dictionary of keys with address and channels of threads
-
-#             data = self.protocol.receive(packet, addr)
-#             if len(data) > 0:
-#                 logging.info("Received data lenght: {}".format(len(data)))
-#             # TODO: concat the data received from the client to make the file
+from lib.sockets_rdt.stream_rdt import StreamRDT
 
 
 class ServerRDT:
@@ -55,12 +12,28 @@ class ServerRDT:
         self.host = host
         self.port = port
         self.protocol = protocol
+        self.client_threads = []
 
     def run(self):
-        listener = ListenerRDT(self.host, self.port)
-        stream, _ = listener.listen()
 
-        #
+        listener = ListenerRDT(self.host, self.port)
+
+        while True:
+            stream, app_header = listener.listen()
+
+            client_thread = Thread(target=self.thread_function,
+                                   args=(stream, app_header))
+            self.client_threads.append(client_thread)
+            client_thread.start()
+
+            for thread in self.client_threads:
+                if not thread.is_alive():
+                    self.client_threads.remove(thread)
+                thread.join()
+
+    def thread_function(
+            self, stream: StreamRDT, app_header: ApplicationHeaderRDT
+    ):
         data = stream.read()
         logging.info("Received data: {}".format(str(data)))
         stream.close()

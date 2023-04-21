@@ -32,7 +32,6 @@ class ListenerRDT():
             raise Exception("Invalid fin")
 
     def listen(self):
-        # TODO Logica de intentos
         logging.info("Waiting for incoming connection")
         while True:
             try:
