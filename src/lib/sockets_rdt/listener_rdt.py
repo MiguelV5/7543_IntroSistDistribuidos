@@ -2,7 +2,7 @@
 
 import logging
 import socket
-from lib.constant import Protocol
+from lib.constant import SelectedProtocol
 from lib.sockets_rdt.handshake_header import HandshakeHeaderRDT
 
 from lib.segment_encoding.header_rdt import HeaderRDT
@@ -55,7 +55,7 @@ class ListenerRDT():
         #  correcta ya verificada del pedido del cliente tras el handshake.
         #  Misma nota en stream_rdt.py:140
         stream, successful_handshake_header = StreamRDT.from_listener(
-            Protocol.STOP_AND_WAIT,
+            SelectedProtocol.STOP_AND_WAIT,
             external_address[0], external_address[1],
             segment, self.host, self.port + self.client_counter
         )

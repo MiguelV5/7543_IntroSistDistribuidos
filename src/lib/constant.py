@@ -1,12 +1,12 @@
 import ctypes
 
 
-class Protocol:
+class SelectedProtocol:
     STOP_AND_WAIT: ctypes.c_int8 = 0
     SELECTIVE_REPEAT: ctypes.c_int8 = 1
 
 
-class TransferType:
+class SelectedTransferType:
     UPLOAD: ctypes.c_int8 = 0
     DOWNLOAD: ctypes.c_int8 = 1
 

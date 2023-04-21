@@ -4,7 +4,7 @@ import logging
 import random
 import socket
 from lib.sockets_rdt.handshake_header import HandshakeHeaderRDT
-from lib.constant import DEFAULT_TIMEOUT, TransferType
+from lib.constant import DEFAULT_TIMEOUT, SelectedTransferType
 
 from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
@@ -158,7 +158,7 @@ class StreamRDT():
         return successful_handshake_header
 
     #
-    def run_handshake_as_initiator(self, transfer_type: TransferType):
+    def run_handshake_as_initiator(self, transfer_type: SelectedTransferType):
         handshake_header_client = HandshakeHeaderRDT(
             transfer_type,
             self.protocol, 'nombre',

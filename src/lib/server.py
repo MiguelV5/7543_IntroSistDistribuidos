@@ -1,9 +1,8 @@
-import logging
-from lib.constant import Protocol
+from lib.constant import SelectedProtocol
 
 from lib.sockets_rdt.listener_rdt import ListenerRDT
 
-from lib.protocols.stop_and_wait import StopAndWait
+# from lib.protocols.stop_and_wait import StopAndWait
 
 
 # class ServerRDT:
@@ -51,7 +50,7 @@ from lib.protocols.stop_and_wait import StopAndWait
 
 
 class ServerRDT:
-    def __init__(self, host, port, protocol=Protocol.STOP_AND_WAIT):
+    def __init__(self, host, port, protocol=SelectedProtocol.STOP_AND_WAIT):
         self.host = host
         self.port = port
         self.protocol = protocol

@@ -1,5 +1,4 @@
-import logging
-from lib.constant import Protocol, TransferType
+from lib.constant import SelectedProtocol, SelectedTransferType
 
 # from lib.protocols.stop_and_wait import StopAndWait
 from lib.sockets_rdt.stream_rdt import StreamRDT
@@ -51,7 +50,7 @@ from lib.sockets_rdt.stream_rdt import StreamRDT
 
 class ClientRDT:
     def __init__(self, external_host, external_port,
-                 protocol=Protocol.STOP_AND_WAIT):
+                 protocol=SelectedProtocol.STOP_AND_WAIT):
         self.external_host = external_host
         self.external_port = external_port
         self.protocol = protocol
@@ -60,5 +59,5 @@ class ClientRDT:
 
         StreamRDT.connect(
             self.protocol,  self.external_host, self.external_port,
-            TransferType.UPLOAD
+            SelectedTransferType.UPLOAD
         )

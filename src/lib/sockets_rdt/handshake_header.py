@@ -3,7 +3,7 @@ import ctypes
 import logging
 import struct
 
-from lib.constant import Protocol, TransferType
+from lib.constant import SelectedProtocol, SelectedTransferType
 
 
 class HandshakeHeaderRDT():
@@ -11,7 +11,8 @@ class HandshakeHeaderRDT():
     MAX_FILE_NAME = 40
     PACKET_FORMAT = '!BB40sI20s'
 
-    def __init__(self, transfer_type: TransferType, protocol: Protocol,
+    def __init__(self, transfer_type: SelectedTransferType,
+                 protocol: SelectedProtocol,
                  file_name: str, file_size, sha1_hash):
         self.transfer_type: ctypes.c_uint8 = transfer_type
         self.protocol: ctypes.c_uint8 = protocol
