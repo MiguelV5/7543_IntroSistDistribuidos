@@ -1,5 +1,6 @@
 
 import ctypes
+import logging
 import struct
 
 from lib.constant import SelectedProtocol, SelectedTransferType
@@ -43,3 +44,5 @@ class HandshakeHeaderRDT():
             )
         file_name = file_name.decode('utf-8').strip('\x00')
         return cls(transfer_type, protocol, file_name, file_size, sha1_hash)
+
+    # TODO: agregar un método para que se cree a partir de un TransferInformation

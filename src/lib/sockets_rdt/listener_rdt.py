@@ -39,7 +39,7 @@ class ListenerRDT():
                 logging.info("Waiting for incoming connection")
                 data, external_address = self.socket.recvfrom(
                     HeaderRDT.size() + HandshakeHeaderRDT.size())
-                segment = SegmentRDT.from_raw_udp_bytes(data)
+                segment = SegmentRDT.from_bytes(data)
                 self._check_first_header(segment.header)
                 self.client_counter += 1
                 break

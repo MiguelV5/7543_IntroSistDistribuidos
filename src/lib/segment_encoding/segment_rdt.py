@@ -16,7 +16,7 @@ class SegmentRDT:
         return self.header.as_bytes() + self.data
 
     @classmethod
-    def from_raw_udp_bytes(cls, data):
+    def from_bytes(cls, data):
         header_size = HeaderRDT.size()
         if len(data) < header_size:
             raise ValueError("Data size is less than header size")
