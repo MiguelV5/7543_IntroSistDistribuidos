@@ -63,3 +63,4 @@ class ServerRDT:
         #
         data = stream.read()
         logging.info("Received data: {}".format(str(data)))
+        stream.close()

@@ -17,6 +17,7 @@ class StreamRDT():
 
     MAX_HANDSHAKE_TIMEOUT_RETRIES = 5
     MAX_READ_TIMEOUT_RETRIES = 3
+    MAX_CLOSE_RETRIES = 5
 
     def __init__(self, protocol, external_host, external_port,
                  seq_num, ack_num, host, port=None):
@@ -87,31 +88,32 @@ class StreamRDT():
         self._update_stream(segment.header)
         return segment.data
 
-        # is_first_ext_addr_check = True
-        # retries = 0
-        # while retries < self.MAX_READ_TIMEOUT_RETRIES:
-        #     try:
-        #         segment_as_bytes, external_address = self.socket.recvfrom(
-        #             buf_size + HeaderRDT.size())
-        #         segment = SegmentRDT.from_bytes(segment_as_bytes)
-        #         self._check_address(
-        #             segment.header, external_address, is_first_ext_addr_check
-        #         )
-        #         is_first_ext_addr_check = False
-        #         self._update_stream(segment.header)
-        #         return segment.data
-        #     except TimeoutError:
-        #         retries += 1
-        #         logging.debug("Timeout while reading")
-        #         continue
-        #     except ValueError as e:
-        #         retries += 1
-        #         logging.error("Invalid segment received:  " + str(e))
-        #         continue
-        # raise TimeoutError("Timeout while reading")
+    def close_external_connection(self):
+        logging.debug("Closing external connection")
+        retries = 0
+        while retries < self.MAX_CLOSE_RETRIES:
+            self._send_base(b'', False, True)
+            try:
+                segment, external_address = self._read_base()
+                self._check_address(
+                    segment.header, external_address
+                )
+                if segment.header.fin:
+                    logging.debug("External connection closed")
+                    break
+                else:
+                    retries += 1
+                    continue
+            except (TimeoutError, ValueError):
+                retries += 1
+                continue
+
+            # TODO: Que pasa si el segmento que recibo no es un fin?
+            # Puede que todavia no se haya recibido todo lo de un archivo
 
     def close(self):
         logging.debug("Closing socket")
+        self.close_external_connection()
         self.socket.close()
 
     def _check_address(
@@ -138,7 +140,7 @@ class StreamRDT():
             (self.external_host, self.external_port)
         )
 
-    def _read_base(self) -> SegmentRDT:
+    def _read_base(self) -> tuple[SegmentRDT, tuple]:
         retries = 0
         logging.debug("Trying to read data from {}:{} ->  {}:{}".format(
             self.external_host, self.external_port, self.host, self.port))
@@ -148,7 +150,7 @@ class StreamRDT():
                     SegmentRDT.MAX_SEGMENT_SIZE + HeaderRDT.size())
                 segment = SegmentRDT.from_bytes(segment_as_bytes)
                 return segment, external_address
-            except TimeoutError:
+            except socket.timeout:
                 retries += 1
                 logging.debug("Timeout while reading")
                 continue
@@ -203,7 +205,7 @@ class StreamRDT():
             transfer_type,
             self.protocol, 'nombre',
             1000,
-            b'\x02\x80\xf4\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02'
+            b'\x02\x80\xf4\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02'  # noqa: E501
         )
 
         # Start message exchange

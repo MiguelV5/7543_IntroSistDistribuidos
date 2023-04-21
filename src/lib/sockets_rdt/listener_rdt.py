@@ -50,12 +50,6 @@ class ListenerRDT():
 
         logging.info("Conection attempt from {}".format(external_address))
 
-        # NOTE (Miguel): Añadido otro valor de retorno para tener la info
-        #  correcta ya verificada del pedido del cliente tras el handshake.
-        #  Misma nota en stream_rdt.py:143
-        # NOTE 2: de paso ya arregle un monton de problemas relacionados a bytes.
-        # Ahora hay que ver por que esta fallando el handshake en el cliente
-        # Tira como que siempre esta recibiendo el handshake header
         stream, successful_app_header = StreamRDT.from_listener(
             SelectedProtocol.STOP_AND_WAIT,
             external_address[0], external_address[1],
