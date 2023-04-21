@@ -61,5 +61,5 @@ class ServerRDT:
         stream, _ = listener.listen()
 
         #
-        data = stream.read(20)
+        data = stream.read()
         logging.info("Received data: {}".format(str(data)))
