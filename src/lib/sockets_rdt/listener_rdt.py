@@ -39,25 +39,30 @@ class ListenerRDT():
                 logging.info("Waiting for incoming connection")
                 data, external_address = self.socket.recvfrom(
                     HeaderRDT.size() + HandshakeHeaderRDT.size())
-                segment = SegmentRDT.from_bytes(data)
+                segment = SegmentRDT.from_raw_udp_bytes(data)
                 self._check_first_header(segment.header)
                 self.client_counter += 1
                 break
             except TimeoutError:
                 continue
             except Exception as e:
-                logging.debug("Invalid segment received: {}".format(e))
+                logging.error("Invalid segment received: {}".format(e))
                 continue
 
-        logging.info("Coonection received from {}".format(external_address))
+        logging.info("Coonection attempt from {}".format(external_address))
 
         # NOTE (Miguel): Añadido otro valor de retorno para tener la info
         #  correcta ya verificada del pedido del cliente tras el handshake.
-        #  Misma nota en stream_rdt.py:140
+        #  Misma nota en stream_rdt.py:143
+        # NOTE 2: de paso ya arregle un monton de problemas relacionados a bytes.
+        # Ahora hay que ver por que esta fallando el handshake en el cliente
+        # Tira como que siempre esta recibiendo el handshake header
         stream, successful_handshake_header = StreamRDT.from_listener(
             SelectedProtocol.STOP_AND_WAIT,
             external_address[0], external_address[1],
             segment, self.host, self.port + self.client_counter
         )
+
+        logging.info("Connection established with {}".format(external_address))
 
         return stream, successful_handshake_header

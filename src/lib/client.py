@@ -1,3 +1,4 @@
+import logging
 from lib.constant import SelectedProtocol, SelectedTransferType
 
 # from lib.protocols.stop_and_wait import StopAndWait
@@ -57,7 +58,18 @@ class ClientRDT:
 
     def upload(self):
 
-        StreamRDT.connect(
-            self.protocol,  self.external_host, self.external_port,
-            SelectedTransferType.UPLOAD
-        )
+        try:
+            stream = StreamRDT.connect(
+                self.protocol,  self.external_host, self.external_port,
+                SelectedTransferType.UPLOAD
+            )
+            logging.info("Client connected to: {}:{}".format(
+                stream.external_host, stream.external_port))
+
+            #
+            stream.send(b"Hello world")
+            stream.close()
+
+        except Exception as e:
+            logging.error("Error: " + str(e))
+            exit(1)

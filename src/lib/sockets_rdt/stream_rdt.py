@@ -1,7 +1,6 @@
 
 
 import logging
-import random
 import socket
 from lib.sockets_rdt.handshake_header import HandshakeHeaderRDT
 from lib.constant import DEFAULT_TIMEOUT, SelectedTransferType
@@ -13,12 +12,18 @@ from lib.segment_encoding.segment_rdt import SegmentRDT
 class StreamRDT():
 
     START_ACK = 0
+    START_LISTENER_SEQ = 1000
+    START_CONNECT_SEQ = 2000
 
     MAX_HANDSHAKE_TIMEOUT_RETRIES = 5
     MAX_READ_TIMEOUT_RETRIES = 3
 
     def __init__(self, protocol, external_host, external_port,
-                 seq_num, ack_num, host, port=None):
+                 seq_num, ack_num, host, port=None, made_via_listener=False):
+        # NOTE (Miguel) Añadido ultimo param para poder actualizar el valor
+        # del puerto para la creacion del stream con el que se van
+        # a comunicar permanentemente con el server a partir del
+        # handshake inclusive
         self.protocol = protocol
         self.external_host = external_host
         self.external_port = external_port
@@ -29,6 +34,8 @@ class StreamRDT():
         self.port = self.socket.getsockname()[1]
         self.socket.settimeout(DEFAULT_TIMEOUT)
 
+        self.made_via_listener = made_via_listener
+
         self.seq_num = seq_num
         self.ack_num = ack_num
 
@@ -38,13 +45,16 @@ class StreamRDT():
         segment: SegmentRDT, host, port
     ):
         stream = cls(
-            protocol, external_host, external_port, host,
-            port, random.randint(0, 2**31), segment.header.ack_num
+            protocol, external_host, external_port,
+            cls.START_LISTENER_SEQ, segment.header.ack_num,
+            host, port,
+            made_via_listener=True
         )
 
         handshake_header = HandshakeHeaderRDT.from_bytes(segment.data)
-        stream.run_handshake_as_listener(handshake_header)
-        return stream
+        final_handshake_header = stream.run_handshake_as_listener(
+            handshake_header)
+        return stream, final_handshake_header
 
     @classmethod
     def connect(
@@ -52,12 +62,13 @@ class StreamRDT():
         external_port, transfer_type
     ):
         stream = cls(
-            protocol, external_host, external_port, random.randint(0, 2**31),
+            protocol, external_host, external_port, cls.START_CONNECT_SEQ,
             StreamRDT.START_ACK, 'localhost'
         )
         logging.info("Connecting to {}:{} with my port: {}".format(
             external_host, external_port, stream.port))
         # stream.socket.bind(('localhost', stream.port))
+        # TODO Pasarle todo lo que se hardcodea en el HandshakeHeader
         stream.run_handshake_as_initiator(transfer_type)
         return stream
 
@@ -70,22 +81,26 @@ class StreamRDT():
         self._send_base(data, False, False)
 
     def read(self, buf_size) -> bytes:
+        is_first_ext_addr_check = True
         retries = 0
         while retries < self.MAX_READ_TIMEOUT_RETRIES:
             try:
                 segment_as_bytes, external_address = self.socket.recvfrom(
                     buf_size + HeaderRDT.size())
-                segment = SegmentRDT.from_bytes(segment_as_bytes)
-                self._check_address(segment.header, external_address)
+                segment = SegmentRDT.from_raw_udp_bytes(segment_as_bytes)
+                self._check_address(
+                    segment.header, external_address, is_first_ext_addr_check
+                )
+                is_first_ext_addr_check = False
                 self._update_stream(segment.header)
                 return segment.data
             except TimeoutError:
                 retries += 1
                 logging.debug("Timeout while reading")
                 continue
-            except ValueError:
+            except ValueError as e:
                 retries += 1
-                logging.debug("Invalid segment received")
+                logging.error("Invalid segment received:  " + str(e))
                 continue
         raise TimeoutError("Timeout while reading")
 
@@ -93,13 +108,19 @@ class StreamRDT():
         logging.debug("Closing socket")
         self.socket.close()
 
-    def _check_address(self, header: HeaderRDT, external_address):
+    def _check_address(
+        self, header: HeaderRDT, external_address, is_first_ext_addr_check
+    ):
+
         if external_address[0] != self.external_host:
             raise ValueError("Invalid external host")
-        if external_address[1] != self.external_port:
-            raise ValueError("Invalid external_port")
+        elif external_address[1] != self.external_port:
+            if not self.made_via_listener and is_first_ext_addr_check:
+                self.external_port = external_address[1]
+            else:
+                raise ValueError("Invalid external_port")
 
-        # TODO Capaz despues checkear algun checksum
+        # TODO posible check de header (syn y fin)
 
     # ======================== FOR PRIVATE USE ========================
 
@@ -122,9 +143,8 @@ class StreamRDT():
             data = self.read(HandshakeHeaderRDT.size())
         except TimeoutError:
             raise TimeoutError("Timeout while reading handshake")
-        print(data)
-        segment = SegmentRDT.from_bytes(data)
-        return HandshakeHeaderRDT.from_bytes(segment.data)
+
+        return HandshakeHeaderRDT.from_bytes(data)
 
     def _base_handshake_messages_exchange(self, initial_handshake_header):
         self._send_handshake(initial_handshake_header.as_bytes())
@@ -163,8 +183,7 @@ class StreamRDT():
             transfer_type,
             self.protocol, 'nombre',
             1000,
-            b'\x02\x80\xf4\xe7\xe0\x17\xfd\x1f\
-            \xb0\x85"2\xc6\x94\x1c\x0b\xb9(Y\x0e'
+            b'\x02\x80\xf4\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02'
         )
 
         # Start message exchange
@@ -173,6 +192,7 @@ class StreamRDT():
             try:
                 self._client_handshake_messages_exchange(
                     handshake_header_client)
+                return
             except TimeoutError:
                 logging.debug("Timeout, retrying")
                 retries += 1

@@ -1,3 +1,4 @@
+import logging
 from lib.constant import SelectedProtocol
 
 from lib.sockets_rdt.listener_rdt import ListenerRDT
@@ -57,4 +58,8 @@ class ServerRDT:
 
     def run(self):
         listener = ListenerRDT(self.host, self.port)
-        listener.listen()
+        stream, _ = listener.listen()
+
+        #
+        data = stream.read(20)
+        logging.info("Received data: {}".format(str(data)))
