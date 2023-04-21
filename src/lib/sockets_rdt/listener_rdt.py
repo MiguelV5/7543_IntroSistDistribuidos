@@ -37,7 +37,8 @@ class ListenerRDT():
         while True:
             try:
                 logging.info("Waiting for incoming connection")
-                data, external_address = self.socket.recvfrom(HeaderRDT.size())
+                data, external_address = self.socket.recvfrom(
+                    HeaderRDT.size() + HandshakeHeaderRDT.size())
                 segment = SegmentRDT.from_bytes(data)
                 self._check_first_header(segment.header)
                 self.client_counter += 1
@@ -50,10 +51,13 @@ class ListenerRDT():
 
         logging.info("Coonection received from {}".format(external_address))
 
-        stream = StreamRDT.from_listener(
+        # NOTE (Miguel): Añadido otro valor de retorno para tener la info
+        #  correcta ya verificada del pedido del cliente tras el handshake.
+        #  Misma nota en stream_rdt.py:140
+        stream, successful_handshake_header = StreamRDT.from_listener(
             Protocol.STOP_AND_WAIT,
             external_address[0], external_address[1],
             segment, self.host, self.port + self.client_counter
         )
 
-        return stream
+        return stream, successful_handshake_header

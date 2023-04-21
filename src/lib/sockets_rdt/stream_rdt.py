@@ -9,6 +9,7 @@ from lib.constant import DEFAULT_TIMEOUT, TransferType
 from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
 
+
 class StreamRDT():
 
     START_ACK = 0
@@ -17,7 +18,7 @@ class StreamRDT():
     MAX_READ_TIMEOUT_RETRIES = 3
 
     def __init__(self, protocol, external_host, external_port,
-                 seq_num, ack_num, host, port = None):
+                 seq_num, ack_num, host, port=None):
         self.protocol = protocol
         self.external_host = external_host
         self.external_port = external_port
@@ -110,12 +111,11 @@ class StreamRDT():
             segment.as_bytes(),
             (self.external_host, self.external_port)
         )
-        
 
     # ---- Handshake related ----
 
     def _send_handshake(self, data):
-        self._send_base(data, syn = True, fin = False)
+        self._send_base(data, syn=True, fin=False)
 
     def _read_handshake(self):
         try:
@@ -135,6 +135,12 @@ class StreamRDT():
 
         if not initial_handshake_header.equals(received_handshake_header):
             raise ValueError("Handshake failed")
+        else:
+            return received_handshake_header
+            # NOTE : (Miguel) Añadido para usar en el server porque no nos
+            # estamos guardando el contenido del header para uso posterior
+            #  (el cliente no lo necesita pero simplemente puede
+            # ignorar este return)
 
     def _client_handshake_messages_exchange(self, handshake_header_client):
         try:
@@ -146,7 +152,10 @@ class StreamRDT():
     def _server_handshake_messages_exchange(
         self, initial_handshake_header_client
     ):
-        self._base_handshake_messages_exchange(initial_handshake_header_client)
+        successful_handshake_header = self._base_handshake_messages_exchange(
+            initial_handshake_header_client
+        )
+        return successful_handshake_header
 
     #
     def run_handshake_as_initiator(self, transfer_type: TransferType):
@@ -170,12 +179,16 @@ class StreamRDT():
             except ValueError:
                 logging.debug("Invalid packet retrying")
                 retries += 1
-        
+
         if retries == self.MAX_HANDSHAKE_TIMEOUT_RETRIES:
-            logging.error("Connection exhausted {} retries".format(self.MAX_HANDSHAKE_TIMEOUT_RETRIES))
-            raise TimeoutError("Connection not established after {} retries".format(
+            logging.error("Connection exhausted {} retries".format(
                 self.MAX_HANDSHAKE_TIMEOUT_RETRIES))
+            raise TimeoutError(
+                "Connection not established after {} retries".format(
+                    self.MAX_HANDSHAKE_TIMEOUT_RETRIES)
+            )
     #
+
     def run_handshake_as_listener(
             self, handshake_header_client: HandshakeHeaderRDT
     ):
@@ -184,8 +197,11 @@ class StreamRDT():
         retries = 0
         while retries < self.MAX_HANDSHAKE_TIMEOUT_RETRIES:
             try:
-                self._server_handshake_messages_exchange(
-                    handshake_header_client)
+                successful_handshake_header = \
+                    self._server_handshake_messages_exchange(
+                        handshake_header_client
+                    )
+                return successful_handshake_header
             except TimeoutError:
                 logging.debug("Timeout, retrying")
                 retries += 1
@@ -196,7 +212,7 @@ class StreamRDT():
     def _update_stream(self, header: HeaderRDT):
         self.ack_num = header.seq_num + 1
         self.seq_num += header.data_size
-        # añadir checks
+        # TODO añadir checks para problemas de packet loss
 
 
 # Cliente -> ACK: 0,            SQN: 999 ,     DATA: ""
