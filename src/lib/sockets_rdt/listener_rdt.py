@@ -16,7 +16,6 @@ class ListenerRDT():
 
         self.host = host
         self.port = port
-        self.client_counter = 0
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(('', self.port))
         self.socket.settimeout(5)
@@ -39,7 +38,6 @@ class ListenerRDT():
                     HeaderRDT.size() + ApplicationHeaderRDT.size())
                 segment = SegmentRDT.from_bytes(data)
                 self._check_first_header(segment.header)
-                self.client_counter += 1
                 break
             except socket.timeout:
                 continue
