@@ -17,12 +17,13 @@ class ApplicationHeaderRDT():
     CHECKSUM_SIZE = 1
 
     def __init__(self, transfer_type: SelectedTransferType,
-                 file_name: str, file_size):
+                 file_name: str, file_size,
+                 data_checksum: ctypes.c_uint8 = 0):
         self.transfer_type: ctypes.c_uint8 = transfer_type
         self.file_name: str = file_name
         self.file_size: ctypes.c_uint32 = file_size
-        self.data_checksum: ctypes.c_uint8 = None
-        self.header_checksum: ctypes.c_uint8 = None
+        self.data_checksum: ctypes.c_uint8 = data_checksum
+        self.header_checksum: ctypes.c_uint8 = 0
 
     def equals(self, app_header: 'ApplicationHeaderRDT'):
         return self.transfer_type == app_header.transfer_type and \

@@ -22,6 +22,9 @@ class SegmentRDT:
     def as_bytes(self):
         return self.header.as_bytes() + self.data
 
+    def get_max_segment_size(self):
+        return self.MAX_DATA_SIZE
+
     @classmethod
     def from_bytes(cls, data):
         header_size = HeaderRDT.size()

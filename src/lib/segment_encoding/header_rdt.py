@@ -15,7 +15,7 @@ class HeaderRDT:
 
     def __repr__(self):
         return "HeaderRDT(protocol={}, data_size={}, seq_num={}, ack_num={}, syn={}, fin={}, checksum={})".format(  # noqa E501
-            self.protocol, self.data_size, self.seq_num, self.ack_num, self.syn, self.fin, self.checksum)
+            self.protocol, self.data_size, self.seq_num, self.ack_num, self.syn, self.fin, self.checksum) # noqa E501
 
     def __str__(self):
         return self.__repr__()
@@ -27,7 +27,7 @@ class HeaderRDT:
                  ack_num: ctypes.c_uint32,
                  syn: ctypes.c_bool,
                  fin: ctypes.c_bool,
-                 checksum: ctypes.c_uint8 = None
+                 checksum: ctypes.c_uint8 = 0
 
                  ):
         self.data_size: ctypes.c_uint32 = data_size

@@ -69,22 +69,33 @@ class StreamRDT():
     # ======================== FOR PUBLIC USE ========================
 
     def send(self, data: bytes):
-        self._send_base(data, False, False)
+        # mss = SegmentRDT.get_max_segment_size()
+        # USE PROTOCOL
+        # if self.protocol == SelectedProtocol.STOP_AND_WAIT:
+        #     protocol = StopAndWait(self)
+        # elif self.protocol == SelectedProtocol.SELECTIVE_REPEAT:
+        #     protocol = SelectiveRepeat(self)
+        # else:
+        #     raise Exception("Invalid protocol")
+        # protocol.send(data)
+        self.send_segment(data, self.seq_num, self.ack_num, False, False)
 
     def read(self) -> bytes:
+
         segment, external_address = self._read_base()
 
         self._check_address(
             segment.header, external_address
         )
         self._update_stream(segment.header)
+
         return segment.data
 
     def close_external_connection(self):
         logging.debug("Closing external connection")
         retries = 0
         while retries < self.MAX_CLOSE_RETRIES:
-            self._send_base(b'', False, True)
+            self.send_segment(b'', self.seq_num, self.ack_num, False, True)
             try:
                 segment, external_address = self._read_base()
                 self._check_address(
@@ -122,12 +133,12 @@ class StreamRDT():
 
     # ======================== FOR PRIVATE USE ========================
 
-    def _send_base(self, data: bytes, syn, fin):
+    def send_segment(self, data: bytes, seq_num, ack_num, syn, fin):
         logging.debug("Sending data from {}:{} ->  {}:{}".format(
             self.host, self.port, self.external_host, self.external_port))
 
         header = HeaderRDT(self.protocol, len(
-            data), self.seq_num, self.ack_num, syn, fin)
+            data), seq_num, ack_num, syn, fin)
         segment = SegmentRDT(header, data)
 
         self.socket.sendto(
@@ -158,7 +169,7 @@ class StreamRDT():
     # ---- Handshake related ----
 
     def _send_handshake(self):
-        self._send_base(b'', syn=True, fin=False)
+        self.send_segment(b'', self.seq_num, self.ack_num, syn=True, fin=False)
 
     def _read_handshake(self):
         try:
