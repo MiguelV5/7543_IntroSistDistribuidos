@@ -22,7 +22,7 @@ class ListenerRDT():
         self.socket.settimeout(5)
 
     def _check_first_header(self, header: HeaderRDT):
-        if header.data_size != ApplicationHeaderRDT.size():
+        if header.data_size != 0:
             raise Exception("Invalid data size")
         if header.ack_num != StreamRDT.START_ACK:
             raise Exception("Invalid ack number")
@@ -43,13 +43,13 @@ class ListenerRDT():
                 break
             except socket.timeout:
                 continue
-            except Exception as e:
+            except (Exception, ValueError) as e:
                 logging.error("Invalid segment received: {}".format(e))
                 continue
 
         logging.info("Conection attempt from {}".format(external_address))
 
-        stream, successful_app_header = StreamRDT.from_listener(
+        stream = StreamRDT.from_listener(
             SelectedProtocol.STOP_AND_WAIT,
             external_address[0], external_address[1],
             segment, self.host
@@ -57,4 +57,4 @@ class ListenerRDT():
 
         logging.info("Connection established with {}".format(external_address))
 
-        return stream, successful_app_header
+        return stream

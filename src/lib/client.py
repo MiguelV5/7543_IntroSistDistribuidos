@@ -61,7 +61,6 @@ class ClientRDT:
         # try:
         stream = StreamRDT.connect(
             self.protocol,  self.external_host, self.external_port,
-            SelectedTransferType.UPLOAD
         )
         logging.info("Client connected to: {}:{}".format(
             stream.external_host, stream.external_port))

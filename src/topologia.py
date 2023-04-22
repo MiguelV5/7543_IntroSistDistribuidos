@@ -14,7 +14,7 @@ class CustomTopo (Topo):
         self.addLink(server, switch, cls=TCLink, loss=loss_percent)
 
         # Create other hosts
-        for i in range(1, num_clients + 1):
+        for i in range(1, num_clients+1):
             host_name = 'h{}'.format(i)
             host = self.addHost(host_name)
 

@@ -1,7 +1,6 @@
 import logging
 from threading import Thread
 from lib.constant import SelectedProtocol
-from lib.sockets_rdt.application_header import ApplicationHeaderRDT
 
 from lib.sockets_rdt.listener_rdt import ListenerRDT
 from lib.sockets_rdt.stream_rdt import StreamRDT
@@ -19,10 +18,10 @@ class ServerRDT:
         listener = ListenerRDT(self.host, self.port)
 
         while True:
-            stream, app_header = listener.listen()
+            stream = listener.listen()
 
             client_thread = Thread(target=self.thread_function,
-                                   args=(stream, app_header))
+                                   args=(stream,))
             self.client_threads.append(client_thread)
             client_thread.start()
 
@@ -32,7 +31,7 @@ class ServerRDT:
                 thread.join()
 
     def thread_function(
-            self, stream: StreamRDT, app_header: ApplicationHeaderRDT
+            self, stream: StreamRDT
     ):
         data = stream.read()
         logging.info("Received data: {}".format(str(data)))

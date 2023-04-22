@@ -2,8 +2,7 @@
 
 import logging
 import socket
-from lib.sockets_rdt.application_header import ApplicationHeaderRDT
-from lib.constant import DEFAULT_TIMEOUT, SelectedTransferType
+from lib.constant import DEFAULT_SOCKET_RECV_TIMEOUT
 
 from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
@@ -21,10 +20,7 @@ class StreamRDT():
 
     def __init__(self, protocol, external_host, external_port,
                  seq_num, ack_num, host, port=None):
-        # NOTE (Miguel) Añadido ultimo param para poder actualizar el valor
-        # del puerto para la creacion del stream con el que se van
-        # a comunicar permanentemente con el server a partir del
-        # handshake inclusive
+
         self.protocol = protocol
         self.external_host = external_host
         self.external_port = external_port
@@ -33,7 +29,7 @@ class StreamRDT():
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(('', 0 if port is None else port))
         self.port = self.socket.getsockname()[1]
-        self.socket.settimeout(DEFAULT_TIMEOUT)
+        self.socket.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
 
         self.seq_num = seq_num
         self.ack_num = ack_num
@@ -54,7 +50,7 @@ class StreamRDT():
     @classmethod
     def connect(
         cls, protocol, external_host,
-        external_port, transfer_type
+        external_port
     ):
         stream = cls(
             protocol, external_host, external_port, cls.START_CONNECT_SEQ,
@@ -64,7 +60,7 @@ class StreamRDT():
             external_host, external_port, stream.port))
         # stream.socket.bind(('localhost', stream.port))
         # TODO Pasarle todo lo que se hardcodea en el HandshakeHeader
-        stream._run_handshake_as_initiator(transfer_type)
+        stream._run_handshake_as_initiator()
         return stream
 
     def settimeout(self, seconds):
@@ -130,7 +126,8 @@ class StreamRDT():
         logging.debug("Sending data from {}:{} ->  {}:{}".format(
             self.host, self.port, self.external_host, self.external_port))
 
-        header = HeaderRDT(len(data), self.seq_num, self.ack_num, syn, fin)
+        header = HeaderRDT(self.protocol, len(
+            data), self.seq_num, self.ack_num, syn, fin)
         segment = SegmentRDT(header, data)
 
         self.socket.sendto(
@@ -145,7 +142,7 @@ class StreamRDT():
         while retries < self.MAX_READ_TIMEOUT_RETRIES:
             try:
                 segment_as_bytes, external_address = self.socket.recvfrom(
-                    SegmentRDT.MAX_SEGMENT_SIZE + HeaderRDT.size())
+                    SegmentRDT.MAX_DATA_SIZE + HeaderRDT.size())
                 segment = SegmentRDT.from_bytes(segment_as_bytes)
                 return segment, external_address
             except socket.timeout:
@@ -184,7 +181,7 @@ class StreamRDT():
         self._send_handshake()
         self._read_handshake()
 
-    def _run_handshake_as_initiator(self):      
+    def _run_handshake_as_initiator(self):
 
         # Start message exchange
         retries = 0
