@@ -48,12 +48,8 @@ class StreamRDT():
             cls.START_LISTENER_SEQ, segment.header.ack_num,
             host, port,
         )
-
-        app_header = ApplicationHeaderRDT.from_bytes(segment.data)
-        stream.run_handshake_as_listener(app_header)
-        return stream, app_header
-        # TODO: Siempre devolver el Transfer Information porquee las
-        # capas de arriba no deberian saber lo del handsahke header
+        stream._run_handshake_as_listener()
+        return stream
 
     @classmethod
     def connect(
@@ -68,7 +64,7 @@ class StreamRDT():
             external_host, external_port, stream.port))
         # stream.socket.bind(('localhost', stream.port))
         # TODO Pasarle todo lo que se hardcodea en el HandshakeHeader
-        stream.run_handshake_as_initiator(transfer_type)
+        stream._run_handshake_as_initiator(transfer_type)
         return stream
 
     def settimeout(self, seconds):
@@ -164,58 +160,37 @@ class StreamRDT():
 
     # ---- Handshake related ----
 
-    def _send_handshake(self, data):
-        self._send_base(data, syn=True, fin=False)
+    def _send_handshake(self):
+        self._send_base(b'', syn=True, fin=False)
 
     def _read_handshake(self):
         try:
-            segment, external_address = self._read_base()
-        except TimeoutError:
-            raise TimeoutError("Timeout while reading handshake")
-
-        return ApplicationHeaderRDT.from_bytes(segment.data), external_address
-
-    def _base_handshake_messages_exchange(
-        self, initial_app_header: ApplicationHeaderRDT
-    ):
-        self._send_handshake(initial_app_header.as_bytes())
-        try:
-            received_app_header, external_address = self._read_handshake()
+            data, external_address = self._read_base()
             self.external_host = external_address[0]
             self.external_port = external_address[1]
         except TimeoutError:
             raise TimeoutError("Timeout while reading handshake")
 
-        if not initial_app_header.equals(received_app_header):
-            raise ValueError("Handshake failed")
+        return external_address
 
-    def _client_handshake_messages_exchange(self, app_header_client):
-        try:
-            self._base_handshake_messages_exchange(app_header_client)
-            self._send_handshake(app_header_client.as_bytes())
-        except TimeoutError:
-            raise TimeoutError("Timeout while reading handshake")
+    def _client_handshake_messages_exchange(self):
+        self._send_handshake()
+        self._read_handshake()
+        self._send_handshake()
 
     def _server_handshake_messages_exchange(
-        self, initial_app_header_client
+        self
     ):
-        self._base_handshake_messages_exchange(initial_app_header_client)
+        self._send_handshake()
+        self._read_handshake()
 
-    #
-    def run_handshake_as_initiator(self, transfer_type: SelectedTransferType):
-        app_header_client = ApplicationHeaderRDT(
-            transfer_type,
-            self.protocol, 'nombre',
-            1000,
-            b'\x02\x80\xf4\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02'  # noqa: E501
-        )
+    def _run_handshake_as_initiator(self):      
 
         # Start message exchange
         retries = 0
         while retries < self.MAX_HANDSHAKE_TIMEOUT_RETRIES:
             try:
-                self._client_handshake_messages_exchange(
-                    app_header_client)
+                self._client_handshake_messages_exchange()
                 return
             except TimeoutError:
                 logging.debug("Timeout, retrying")
@@ -224,26 +199,20 @@ class StreamRDT():
                 logging.debug("Invalid packet retrying")
                 retries += 1
 
-        if retries == self.MAX_HANDSHAKE_TIMEOUT_RETRIES:
-            logging.error("Connection exhausted {} retries".format(
-                self.MAX_HANDSHAKE_TIMEOUT_RETRIES))
-            raise TimeoutError(
-                "Connection not established after {} retries".format(
-                    self.MAX_HANDSHAKE_TIMEOUT_RETRIES)
-            )
-    #
+        logging.error("Connection exhausted {} retries".format(
+            self.MAX_HANDSHAKE_TIMEOUT_RETRIES))
+        raise TimeoutError(
+            "Connection not established after {} retries".format(
+                self.MAX_HANDSHAKE_TIMEOUT_RETRIES)
+        )
 
-    def run_handshake_as_listener(
-            self, app_header_client: ApplicationHeaderRDT
+    def _run_handshake_as_listener(
+            self
     ):
-
-        # Start message exchange
         retries = 0
         while retries < self.MAX_HANDSHAKE_TIMEOUT_RETRIES:
             try:
-                self._server_handshake_messages_exchange(
-                    app_header_client
-                )
+                self._server_handshake_messages_exchange()
                 break
             except TimeoutError:
                 logging.debug("Timeout, retrying")
