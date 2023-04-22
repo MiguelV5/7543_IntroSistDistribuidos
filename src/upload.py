@@ -15,12 +15,6 @@ def main():
         exit(1)
     client.upload()
 
-    # for testing we create a bytes object
-    #  with 3072 bytes (should make 3 packets)
-    # data = b'1' * 3072
-
-    # client.send(data)
-
 
 if __name__ == "__main__":
     main()

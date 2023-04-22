@@ -125,6 +125,8 @@ class StreamRDT():
             raise ValueError("Invalid external_port")
 
         # TODO posible check de header (syn y fin)
+    # TODO  def _check_segment_at_handshake
+    # TODO  def _check_segment_at_close
 
     # ======================== FOR PRIVATE USE ========================
 
@@ -253,7 +255,7 @@ class StreamRDT():
     def _update_stream(self, header: HeaderRDT):
         self.ack_num = header.seq_num + 1
         self.seq_num += header.data_size
-        # TODO añadir checks para problemas de packet loss
+        # TODO añadir checks
 
 
 # Cliente -> ACK: 0,            SQN: 999 ,     DATA: ""
