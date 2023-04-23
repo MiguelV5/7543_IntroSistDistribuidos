@@ -6,7 +6,7 @@ from typing import Tuple
 from lib.constant import DEFAULT_SOCKET_RECV_TIMEOUT, DEFAULT_SOCKET_RECV_TIMEOUT, SelectedProtocol
 from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
-from lib.protocols.stop_and_wait import StopAndWait
+from lib.protocols.stop_and_wait import StopAndWait, SelectiveRepeat
 
 
 class StreamRDT():
@@ -34,7 +34,6 @@ class StreamRDT():
 
         self.seq_num = seq_num
         self.ack_num = ack_num
-
     @classmethod
     def from_listener(
         cls, protocol, external_host, external_port,
@@ -69,23 +68,23 @@ class StreamRDT():
     # ======================== FOR PUBLIC USE ========================
 
     def send(self, data: bytes):
-        # mss = SegmentRDT.get_max_segment_size()
-        # if self.protocol == SelectedProtocol.STOP_AND_WAIT:
-        #     protocol = StopAndWait(self)
-        # elif self.protocol == SelectedProtocol.SELECTIVE_REPEAT:
-        #     protocol = StopAndWait(self)
-        # else:
-        #     raise Exception("Invalid protocol")
-        # protocol.send(data)
-        self.send_segment(data, self.seq_num, self.ack_num, False, False)
+        mss = SegmentRDT.get_max_segment_size()
+        if self.protocol == SelectedProtocol.STOP_AND_WAIT:
+            protocol = StopAndWait(self, mss) #cambiar
+        elif self.protocol == SelectedProtocol.SELECTIVE_REPEAT:
+            protocol = SelectiveRepeat(self, 5, mss)
+        else:
+            raise Exception("Invalid protocol")
+        # TODO: quien crea los segmentos?
+        data_segments = []
+        for i in range(0, len(data), mss):
+            data_segments.append(data[i:i+mss])
+        protocol.send(data_segments)
 
     def read(self) -> bytes:
-        segment, external_address = self._read_segment()
+        segment, external_address = self.read_segment()
 
-        self._check_address(
-            segment.header, external_address
-        )
-        self._update_stream(segment.header)
+        self._check_address(external_address)
 
         return segment.data
 
@@ -95,10 +94,8 @@ class StreamRDT():
         while retries < self.MAX_CLOSE_RETRIES:
             self.send_segment(b'', self.seq_num, self.ack_num, False, True)
             try:
-                segment, external_address = self._read_segment()
-                self._check_address(
-                    segment.header, external_address
-                )
+                segment, external_address = self.read_segment()
+                self._check_address(external_address)
                 if segment.header.fin:
                     logging.debug("External connection closed")
                     break
@@ -118,7 +115,7 @@ class StreamRDT():
         self.socket.close()
 
     def _check_address(
-        self, header: HeaderRDT, external_address
+        self, external_address
     ):
         if external_address[0] != self.external_host:
             raise ValueError("Invalid external host")
@@ -131,21 +128,34 @@ class StreamRDT():
 
     # ======================== FOR PRIVATE USE ========================
 
-    def receive_segment_non_blocking(self):
+    def read_segment(self) -> Tuple[SegmentRDT, tuple]:
+        logging.debug("Trying to read data from {}:{} ->  {}:{}".format(
+        self.external_host, self.external_port, self.host, self.port))
+        try:
+            segment_as_bytes, external_address = self.socket.recvfrom(
+                SegmentRDT.MAX_DATA_SIZE + HeaderRDT.size())
+            segment = SegmentRDT.from_bytes(segment_as_bytes)
+            return segment, external_address
+        except socket.timeout:
+            logging.error("Timeout while reading")
+            raise TimeoutError("Timeout while reading")
+        except ValueError as e:
+            logging.error("Invalid segment received:  " + str(e))
+            raise ValueError("Invalid segment received:  " + str(e))
+
+    def read_segment_non_blocking(self):
         try:
             self.socket.settimeout(0)
             segment_as_bytes, external_address = self.socket.recvfrom(
                 SegmentRDT.MAX_DATA_SIZE + HeaderRDT.size())
-
             segment = SegmentRDT.from_bytes(segment_as_bytes)
-            self._check_address(
-                segment.header, external_address
-            )
+            self._check_address(external_address)
             self.socket.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
-            return segment
+            return segment, external_address
         except Exception:
-            return None, None
-
+            self.socket.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
+            return None, None 
+    
     def send_segment(self, data: bytes, seq_num, ack_num, syn, fin):
         logging.debug("Sending data from {}:{} ->  {}:{}".format(
             self.host, self.port, self.external_host, self.external_port))
@@ -159,21 +169,6 @@ class StreamRDT():
             (self.external_host, self.external_port)
         )
 
-    def _read_segment(self) -> Tuple[SegmentRDT, tuple]:
-        logging.debug("Trying to read data from {}:{} ->  {}:{}".format(
-            self.external_host, self.external_port, self.host, self.port))
-        try:
-            segment_as_bytes, external_address = self.socket.recvfrom(
-                SegmentRDT.MAX_DATA_SIZE + HeaderRDT.size())
-            segment = SegmentRDT.from_bytes(segment_as_bytes)
-            return segment, external_address
-        except socket.timeout:
-            logging.error("Timeout while reading")
-            raise TimeoutError("Timeout while reading")
-        except ValueError as e:
-            logging.error("Invalid segment received:  " + str(e))
-            raise ValueError("Invalid segment received:  " + str(e))
-
     # ---- Handshake related ----
 
     def _send_handshake(self):
@@ -181,17 +176,18 @@ class StreamRDT():
 
     def _read_handshake(self):
         try:
-            _, external_address = self._read_segment()
+            segment, external_address = self.read_segment()
             self.external_host = external_address[0]
             self.external_port = external_address[1]
+            self.ack_num = segment.header.seq_num
         except TimeoutError:
             raise TimeoutError("Timeout while reading handshake")
 
-        return external_address
+        return segment.header
 
-    def _client_handshake_messages_exchange(self):
+    def _initiatior_handshake_messages_exchange(self):        
         self._send_handshake()
-        self._read_handshake()
+        self._read_handshake() 
         self._send_handshake()
 
     def _listener_handshake_messages_exchange(
@@ -206,7 +202,7 @@ class StreamRDT():
         retries = 0
         while retries < self.MAX_HANDSHAKE_TIMEOUT_RETRIES:
             try:
-                self._client_handshake_messages_exchange()
+                self._initiatior_handshake_messages_exchange()
                 return
             except TimeoutError:
                 logging.debug("Timeout, retrying")
@@ -236,20 +232,3 @@ class StreamRDT():
             except ValueError:
                 logging.debug("Invalid packet retrying")
                 retries += 1
-
-    def _update_stream(self, header: HeaderRDT):
-        self.ack_num = header.seq_num + 1
-        self.seq_num += header.data_size
-        # TODO añadir checks
-
-
-# Cliente -> ACK: 0,            SQN: 999 ,     DATA: ""
-# Server  -> ACK: 999   -1,     SQN: 2011,     DATA: ""
-# Cliente -> ACK: 2011 - 1,     SQN: 999 ,     DATA: ""
-
-# Server  -> ACK: 999  - 1,     SQN: 2011,      DATA: "a"
-# Cliente -> ACK: 2011 - 1,     SQN: 999  + 1,  DATA: "b"
-# Server  -> ACK: 1000 - 1,     SQN: 2011 + 1,  DATA: "a"
-# Cliente -> ACK: 2011 - 1,     SQN: 999  + 1,  DATA: "b"
-# Server  -> ACK: 1000 - 1,     SQN: 2011 + 1,  DATA: "a"
-# Cliente -> ACK: 2011 - 1,     SQN: 999  + 1,  DATA: "b"

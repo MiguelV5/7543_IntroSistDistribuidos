@@ -15,7 +15,7 @@ class ServerRDT:
 
     def run(self):
 
-        listener = ListenerRDT(self.host, self.port)
+        listener = ListenerRDT(self.host, self.port, self.protocol)
 
         while True:
             stream = listener.listen()
@@ -33,6 +33,12 @@ class ServerRDT:
     def thread_function(
             self, stream: StreamRDT
     ):
+        # aca hay que ir leyendo con read hasta que complete el archivo
+        # como completamos el archivo? porque el header tiene el size
+        # como se obtiene el size se lee del primer paquete el header de aplicacion
+
+        # protocol.read()
         data = stream.read()
+        # cuando termine de leer se llama al stream close
         logging.info("Received data: {}".format(str(data)))
         stream.close()

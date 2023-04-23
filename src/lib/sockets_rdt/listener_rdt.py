@@ -12,13 +12,14 @@ from lib.sockets_rdt.stream_rdt import StreamRDT
 
 class ListenerRDT():
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, protocol = SelectedProtocol.STOP_AND_WAIT):
 
         self.host = host
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(('', self.port))
         self.socket.settimeout(5)
+        self.protocol = protocol
 
     def _check_first_header(self, header: HeaderRDT):
         if header.data_size != 0:
@@ -48,7 +49,7 @@ class ListenerRDT():
         logging.info("Conection attempt from {}".format(external_address))
 
         stream = StreamRDT.from_listener(
-            SelectedProtocol.STOP_AND_WAIT,
+            self.protocol,
             external_address[0], external_address[1],
             segment, self.host
         )
