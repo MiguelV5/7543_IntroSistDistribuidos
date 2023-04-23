@@ -13,9 +13,6 @@ def main():
 
     client = ClientRDT(args.host, args.port, protocol)
 
-    # tratar de abrir el archivo que pidio el user
-    # obtener la data como bytes
-    # cambiar el metodo de upload para que tome los datos y el nombre del archivo
     try:
         client.upload(args.name, args.src)
     except Exception as e:

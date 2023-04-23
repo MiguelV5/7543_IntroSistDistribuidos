@@ -1,5 +1,5 @@
 import logging
-from lib.sockets_rdt.stream_rdt import StreamRDT
+
 
 class SlidingWindow:
     
@@ -75,7 +75,7 @@ class SlidingWindow:
 
 class SelectiveRepeat:
 
-    def __init__(self, stream: StreamRDT, window_size, mss: int):
+    def __init__(self, stream, window_size, mss: int):
         self.stream = stream
         self.seq_num = self.stream.seq_num
         self.ack_num = self.stream.ack_num

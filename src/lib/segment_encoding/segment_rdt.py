@@ -1,8 +1,6 @@
 from lib.segment_encoding.header_rdt import HeaderRDT
 
-
 class SegmentRDT:
-
     MAX_DATA_SIZE = 1024
 
     def __repr__(self):
@@ -22,8 +20,9 @@ class SegmentRDT:
     def as_bytes(self):
         return self.header.as_bytes() + self.data
 
-    def get_max_segment_size(self):
-        return self.MAX_DATA_SIZE
+    @classmethod
+    def get_max_segment_size(cls):
+        return cls.MAX_DATA_SIZE
 
     @classmethod
     def from_bytes(cls, data):
