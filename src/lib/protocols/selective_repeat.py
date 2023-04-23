@@ -86,9 +86,6 @@ class SelectiveRepeat:
         self.window_size = 5
         self.mss = mss
 
-        # self.acks_segment = {}
-        # self.sent_segments = {}
-
     def send(self, data):
         # separating data into segments by mss
         data_segments = self.get_segment_data(data)
@@ -125,31 +122,6 @@ class SelectiveRepeat:
                 continue
             except TimeoutError:
                 continue
-
-                # segments = self.window.get().items()
-
-                # filter de los que envie segments con sent_segments
-                # while len(segments) > 0:
-                # envio el segmento
-                #
-                # recibo el ack bloqueante con timeout de 1 segundo
-
-                # sending segments
-                # sl = actual_window.items()
-                # while len(sl) > 0:
-                #     seq_num, segment = sl.
-                #     logging.info(f"Sending segment {seq_num}")
-                #     # sending each segment with its own seq_num
-                #     self.stream.send_segment(segment, seq_num, self.ack_num, False, False)
-                #     # receiving acks non blocking
-                #     segment = self.stream.receive_segment_non_blocking()
-                #     if segment is not None:
-                #         # if ack received, move window
-                #         logging.info(f"Received ack {segment.header.ack_num}")
-                #         # an ack was received, we save the ack in the acks dict
-                #         acks[segment.header.ack_num] = True
-                #         self.window.move()
-                #         buffer = self.window.get()
 
     def get_segment_data(self, data):
         # separating data into segments by mss
