@@ -58,14 +58,16 @@ class ClientRDT:
 
     def upload(self):
 
-        # try:
+        # connect and do the three way handshake
         stream = StreamRDT.connect(
             self.protocol,  self.external_host, self.external_port,
         )
         logging.info("Client connected to: {}:{}".format(
             stream.external_host, stream.external_port))
 
-        #
+        # en este lado hay que enviar los datos del archivo con su nombre
+        # aca hay que crear el header de aplicacion con ApplicationHeaderRDT
+        # calcular el checksum crc y agregarlo al header
         stream.send(b"Hello world")
         stream.close()
 

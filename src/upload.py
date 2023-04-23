@@ -13,6 +13,9 @@ def main():
     except Exception as e:
         logging.error("Error: " + str(e))
         exit(1)
+    # tratar de abrir el archivo que pidio el user
+    # obtener la data como bytes
+    # cambiar el metodo de upload para que tome los datos y el nombre del archivo
     client.upload()
 
 
