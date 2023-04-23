@@ -1,4 +1,4 @@
-from lib.protocols.stop_and_wait import SelectiveRepeat
+from lib.protocols.selective_repeat import SelectiveRepeat
 
 
 # create a stop and wait protocol
