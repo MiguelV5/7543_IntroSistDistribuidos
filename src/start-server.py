@@ -8,7 +8,7 @@ def main():
     args = parse_server_args()
     configure_logger(args, "server.log")
 
-    protocol = SelectedProtocol.SELECTIVE_REPEAT if args.selective_repeat else SelectedProtocol.SELECTIVE_REPEAT 
+    protocol = SelectedProtocol.SELECTIVE_REPEAT if args.selective_repeat else SelectedProtocol.STOP_AND_WAIT
 
     # create new server from class
     server = ServerRDT(args.host, args.port, protocol)
