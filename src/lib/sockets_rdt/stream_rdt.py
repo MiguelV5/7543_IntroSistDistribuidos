@@ -181,6 +181,7 @@ class StreamRDT():
             self.external_host = external_address[0]
             self.external_port = external_address[1]
             self.ack_num = segment.header.seq_num
+
         except TimeoutError:
             raise TimeoutError("Timeout while reading handshake")
 
