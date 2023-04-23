@@ -1,8 +1,12 @@
 import logging
+import os
 from lib.constant import SelectedProtocol, SelectedTransferType
+from lib.sockets_rdt.application_header import ApplicationHeaderRDT
 
 # from lib.protocols.stop_and_wait import StopAndWait
 from lib.sockets_rdt.stream_rdt import StreamRDT
+from crc import Calculator, Crc8
+calculator = Calculator(Crc8.CCITT, optimized=True)
 
 
 # class ClientRDT:
@@ -56,9 +60,20 @@ class ClientRDT:
         self.external_port = external_port
         self.protocol = protocol
 
-    def upload(self):
+    def upload(self, file_name):
 
-        # connect and do the three way handshake
+         # Instance of ApplicationHeaderRDT - file name and size
+        file_size = file_name.size() #os.path.getsize(file_name)
+        transfer_type = SelectedTransferType.BINARY
+        app_header = ApplicationHeaderRDT(transfer_type, file_name, file_size)
+
+        # Header checksum
+        header_checksum = calculator.checksum(app_header.as_bytes())
+
+        # Checksum added to the ApplicationHeaderRDT object
+        app_header.header_checksum = header_checksum
+
+        # Connect and do the three way handshake
         stream = StreamRDT.connect(
             self.protocol,  self.external_host, self.external_port,
         )
@@ -68,7 +83,15 @@ class ClientRDT:
         # en este lado hay que enviar los datos del archivo con su nombre
         # aca hay que crear el header de aplicacion con ApplicationHeaderRDT
         # calcular el checksum crc y agregarlo al header
-        stream.send(b"Hello world")
+        # Send the header and then the file data
+        stream.send(app_header.as_bytes())
+        with open(file_name, "rb") as f:
+            while True:
+                data = f.read(StreamRDT.CHUNK_SIZE)
+                if not data:
+                    break
+                stream.send(data)    
+
         stream.close()
 
         # except Exception as e:
