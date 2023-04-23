@@ -136,18 +136,16 @@ class StreamRDT():
             self.socket.settimeout(0)
             segment_as_bytes, external_address = self.socket.recvfrom(
                 SegmentRDT.MAX_DATA_SIZE + HeaderRDT.size())
-            
-            self._check_address(
-            segment.header, external_address
-            )
 
             segment = SegmentRDT.from_bytes(segment_as_bytes)
+            self._check_address(
+                segment.header, external_address
+            )
             self.socket.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
-            return segment   
-        except Exception as e:
-            return None, None 
-    
-       
+            return segment
+        except Exception:
+            return None, None
+
     def send_segment(self, data: bytes, seq_num, ack_num, syn, fin):
         logging.debug("Sending data from {}:{} ->  {}:{}".format(
             self.host, self.port, self.external_host, self.external_port))
@@ -163,7 +161,7 @@ class StreamRDT():
 
     def _read_segment(self) -> Tuple[SegmentRDT, tuple]:
         logging.debug("Trying to read data from {}:{} ->  {}:{}".format(
-        self.external_host, self.external_port, self.host, self.port))
+            self.external_host, self.external_port, self.host, self.port))
         try:
             segment_as_bytes, external_address = self.socket.recvfrom(
                 SegmentRDT.MAX_DATA_SIZE + HeaderRDT.size())

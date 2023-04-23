@@ -9,17 +9,18 @@ def main():
     args = parse_upload_args()
     configure_logger(args, "upload.log")
 
-    protocol = SelectedProtocol.SELECTIVE_REPEAT if args.selective_repeat else SelectedProtocol.SELECTIVE_REPEAT
+    protocol = SelectedProtocol.SELECTIVE_REPEAT if args.selective_repeat else SelectedProtocol.STOP_AND_WAIT
 
-    try:
-        client = ClientRDT(args.host, args.port, protocol)
-    except Exception as e:
-        logging.error("Error: " + str(e))
-        exit(1)
+    client = ClientRDT(args.host, args.port, protocol)
+
     # tratar de abrir el archivo que pidio el user
     # obtener la data como bytes
     # cambiar el metodo de upload para que tome los datos y el nombre del archivo
-    client.upload()
+    try:
+        client.upload(args.name, args.src)
+    except Exception as e:
+        logging.error("Error uploading file: " + str(e))
+        exit(1)
 
 
 if __name__ == "__main__":
