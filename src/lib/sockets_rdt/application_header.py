@@ -16,6 +16,13 @@ class ApplicationHeaderRDT():
 
     CHECKSUM_SIZE = 1
 
+    def __repr__(self):
+        return "ApplicationHeaderRDT(transfer_type={}, file_name={}, file_size={})".format(  # noqa E501
+            self.transfer_type, self.file_name, self.file_size)
+
+    def __str__(self):
+        return self.__repr__()
+
     def __init__(self, transfer_type: SelectedTransferType,
                  file_name: str, file_size,
                  ):

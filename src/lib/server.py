@@ -1,6 +1,7 @@
 import logging
 from threading import Thread
 from lib.constant import SelectedProtocol
+from lib.sockets_rdt.application_header import ApplicationHeaderRDT
 
 from lib.sockets_rdt.listener_rdt import ListenerRDT
 from lib.sockets_rdt.stream_rdt import StreamRDT
@@ -37,8 +38,30 @@ class ServerRDT:
         # como completamos el archivo? porque el header tiene el size
         # como se obtiene el size se lee del primer paquete el header de aplicacion
 
-        # protocol.read()
         data = stream.read()
-        # cuando termine de leer se llama al stream close
+
+        try:
+            app_header_bytes = data[:ApplicationHeaderRDT.size()]
+            app_header = ApplicationHeaderRDT.from_bytes(app_header_bytes)
+            data = data[ApplicationHeaderRDT.size():]
+        except Exception as e:
+            logging.error("Error reading application header: " + str(e))
+            stream.close()
+            exit(1)
+
+        remaining_file_size = app_header.file_size - len(data)
+        file_name = app_header.file_name
+        transfer_type = app_header.transfer_type
+
+        logging.info("Received application header: {}".format(str(app_header)))
+        logging.info("Received file name: {}".format(file_name))
+        logging.info("Received transfer type: {}".format(transfer_type))
+
+        while remaining_file_size > 0:
+
+            new_data = stream.read()
+            data += new_data
+            remaining_file_size -= len(new_data)
+
         logging.info("Received data: {}".format(str(data)))
         stream.close()

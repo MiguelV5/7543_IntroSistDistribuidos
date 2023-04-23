@@ -19,10 +19,10 @@ class StreamRDT():
     MAX_READ_TIMEOUT_RETRIES = 3
     MAX_CLOSE_RETRIES = 5
 
-    def __init__(self, protocol, external_host, external_port,
+    def __init__(self, selected_protocol, external_host, external_port,
                  seq_num, ack_num, host, port=None):
 
-        self.protocol = protocol
+        self.selected_protocol = selected_protocol
         self.external_host = external_host
         self.external_port = external_port
         self.host = host
@@ -34,6 +34,8 @@ class StreamRDT():
 
         self.seq_num = seq_num
         self.ack_num = ack_num
+        self.protocol = self._select_protocol()
+
     @classmethod
     def from_listener(
         cls, protocol, external_host, external_port,
@@ -67,26 +69,24 @@ class StreamRDT():
 
     # ======================== FOR PUBLIC USE ========================
 
+    def _select_protocol(self):
+        mss = SegmentRDT.get_max_segment_size()
+        protocol = StopAndWait(self, mss)
+        if self.selected_protocol == SelectedProtocol.SELECTIVE_REPEAT:
+            protocol = SelectiveRepeat(self, 5, mss)
+        return protocol
+
     def send(self, data: bytes):
         mss = SegmentRDT.get_max_segment_size()
-        if self.protocol == SelectedProtocol.STOP_AND_WAIT:
-            protocol = StopAndWait(self, mss) #cambiar
-        elif self.protocol == SelectedProtocol.SELECTIVE_REPEAT:
-            protocol = SelectiveRepeat(self, 5, mss)
-        else:
-            raise Exception("Invalid protocol")
-        # TODO: quien crea los segmentos?
+        protocol = self._select_protocol()
         data_segments = []
         for i in range(0, len(data), mss):
             data_segments.append(data[i:i+mss])
         protocol.send(data_segments)
 
     def read(self) -> bytes:
-        segment, external_address = self.read_segment()
-
-        self._check_address(external_address)
-
-        return segment.data
+        protocol = self._select_protocol()
+        return protocol.read()
 
     def close_external_connection(self):
         logging.debug("Closing external connection")
@@ -130,7 +130,7 @@ class StreamRDT():
 
     def read_segment(self) -> Tuple[SegmentRDT, tuple]:
         logging.debug("Trying to read data from {}:{} ->  {}:{}".format(
-        self.external_host, self.external_port, self.host, self.port))
+            self.external_host, self.external_port, self.host, self.port))
         try:
             segment_as_bytes, external_address = self.socket.recvfrom(
                 SegmentRDT.MAX_DATA_SIZE + HeaderRDT.size())
@@ -154,13 +154,13 @@ class StreamRDT():
             return segment, external_address
         except Exception:
             self.socket.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
-            return None, None 
-    
+            return None, None
+
     def send_segment(self, data: bytes, seq_num, ack_num, syn, fin):
         logging.debug("Sending data from {}:{} ->  {}:{}".format(
             self.host, self.port, self.external_host, self.external_port))
 
-        header = HeaderRDT(self.protocol, len(
+        header = HeaderRDT(self.selected_protocol, len(
             data), seq_num, ack_num, syn, fin)
         segment = SegmentRDT(header, data)
 
@@ -185,9 +185,9 @@ class StreamRDT():
 
         return segment.header
 
-    def _initiatior_handshake_messages_exchange(self):        
+    def _initiatior_handshake_messages_exchange(self):
         self._send_handshake()
-        self._read_handshake() 
+        self._read_handshake()
         self._send_handshake()
 
     def _listener_handshake_messages_exchange(

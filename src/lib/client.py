@@ -9,6 +9,7 @@ from crc import Calculator, Crc8
 
 calculator = Calculator(Crc8.CCITT, optimized=True)
 
+
 class ClientRDT:
     def __init__(self, external_host, external_port,
                  protocol=SelectedProtocol.STOP_AND_WAIT):
@@ -53,8 +54,8 @@ class ClientRDT:
             if i == 0:
                 app_header = ApplicationHeaderRDT(
                     transfer_type, file_name, file_size
-                    )
-                logging.debug("Sending application header: " + str(app_header))
+                )
+                logging.debug(f"Sending application header: {app_header}")
                 data = app_header.as_bytes() + data
 
             stream.send(data)
