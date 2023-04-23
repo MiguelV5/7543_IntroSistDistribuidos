@@ -63,13 +63,13 @@ class ApplicationHeaderRDT():
         if calculator.verify(data, checksum) is False:
             raise ValueError("Checksum of ApplicationHeaderRDT is not correct")
 
-        transfer_type, protocol, file_name, file_size = \
+        transfer_type, file_name, file_size = \
             struct.unpack(
                 cls.PACKET_FORMAT, data
             )
 
         file_name = file_name.decode('utf-8').strip('\x00')
-        return cls(transfer_type, protocol, file_name, file_size)
+        return cls(transfer_type, file_name, file_size)
 
     # TODO: agregar un método para que se cree a partir de un
     # TransferInformation

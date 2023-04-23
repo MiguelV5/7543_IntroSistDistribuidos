@@ -82,6 +82,7 @@ class StreamRDT():
         data_segments = []
         for i in range(0, len(data), mss):
             data_segments.append(data[i:i+mss])
+
         protocol.send(data_segments)
 
     def read(self) -> bytes:
@@ -137,10 +138,10 @@ class StreamRDT():
             segment = SegmentRDT.from_bytes(segment_as_bytes)
             return segment, external_address
         except socket.timeout:
-            logging.error("Timeout while reading")
+            # logging.debug("Timeout while reading")
             raise TimeoutError("Timeout while reading")
         except ValueError as e:
-            logging.error("Invalid segment received:  " + str(e))
+            logging.debug("Invalid segment received:  " + str(e))
             raise ValueError("Invalid segment received:  " + str(e))
 
     def read_segment_non_blocking(self):
@@ -160,8 +161,8 @@ class StreamRDT():
         logging.debug("Sending data from {}:{} ->  {}:{}".format(
             self.host, self.port, self.external_host, self.external_port))
 
-        header = HeaderRDT(self.selected_protocol, len(
-            data), seq_num, ack_num, syn, fin)
+        header = HeaderRDT(self.selected_protocol, len(data),
+                           seq_num, ack_num, syn, fin)
         segment = SegmentRDT(header, data)
 
         self.socket.sendto(
@@ -205,10 +206,10 @@ class StreamRDT():
                 self._initiatior_handshake_messages_exchange()
                 return
             except TimeoutError:
-                logging.debug("Timeout, retrying")
+                # logging.debug("Timeout, retrying")
                 retries += 1
             except ValueError:
-                logging.debug("Invalid packet retrying")
+                # logging.debug("Invalid packet retrying")
                 retries += 1
 
         logging.error("Connection exhausted {} retries".format(
@@ -227,8 +228,8 @@ class StreamRDT():
                 self._listener_handshake_messages_exchange()
                 break
             except TimeoutError:
-                logging.debug("Timeout, retrying")
+                # logging.debug("Timeout, retrying")
                 retries += 1
             except ValueError:
-                logging.debug("Invalid packet retrying")
+                # logging.debug("Invalid packet retrying")
                 retries += 1

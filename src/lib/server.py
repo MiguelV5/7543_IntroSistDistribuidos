@@ -1,6 +1,7 @@
 import logging
 from threading import Thread
 from lib.constant import SelectedProtocol
+from lib.file_handling import FileHandler
 from lib.sockets_rdt.application_header import ApplicationHeaderRDT
 
 from lib.sockets_rdt.listener_rdt import ListenerRDT
@@ -42,6 +43,7 @@ class ServerRDT:
 
         try:
             app_header_bytes = data[:ApplicationHeaderRDT.size()]
+
             app_header = ApplicationHeaderRDT.from_bytes(app_header_bytes)
             data = data[ApplicationHeaderRDT.size():]
         except Exception as e:
@@ -58,10 +60,13 @@ class ServerRDT:
         logging.info("Received transfer type: {}".format(transfer_type))
 
         while remaining_file_size > 0:
-
             new_data = stream.read()
             data += new_data
             remaining_file_size -= len(new_data)
 
-        logging.info("Received data: {}".format(str(data)))
+        file_path = "./sv_storage/" + file_name
+        file = FileHandler(file_path, "wb")
+        file.write(data)
+
+        file.close()
         stream.close()

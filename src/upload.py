@@ -13,11 +13,11 @@ def main():
 
     client = ClientRDT(args.host, args.port, protocol)
 
-    try:
-        client.upload(args.name, args.src)
-    except Exception as e:
-        logging.error("Error uploading file: " + str(e))
-        exit(1)
+    # try:
+    client.upload(args.name, args.src)
+    # except Exception as e:
+    #    logging.error("Error uploading file: " + str(e))
+    #    exit(1)
 
 
 if __name__ == "__main__":

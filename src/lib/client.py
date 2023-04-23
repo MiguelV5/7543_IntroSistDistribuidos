@@ -39,7 +39,7 @@ class ClientRDT:
 
         file = FileHandler(file_src_path, "rb")
 
-        chunk_size = SegmentRDT.get_max_segment_size()
+        chunk_size = SegmentRDT.get_max_segment_size() - ApplicationHeaderRDT.size()
 
         for i in range(0, file_size, chunk_size):
             logging.debug("Sending chunk: " + str(i))
