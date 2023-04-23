@@ -3,7 +3,7 @@
 import logging
 import socket
 from typing import Tuple
-from lib.constant import DEFAULT_SOCKET_RECV_TIMEOUT, DEFAULT_SOCKET_RECV_TIMEOUT, SelectedProtocol
+from lib.constant import DEFAULT_SOCKET_RECV_TIMEOUT,  SelectedProtocol
 from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
 from lib.protocols.stop_and_wait import StopAndWait, SelectiveRepeat
@@ -178,17 +178,20 @@ class StreamRDT():
     def _read_handshake(self):
         try:
             segment, external_address = self.read_segment()
-            self.external_host = external_address[0]
-            self.external_port = external_address[1]
-            self.ack_num = segment.header.seq_num
-
         except TimeoutError:
             raise TimeoutError("Timeout while reading handshake")
+
+        self.external_host = external_address[0]
+        self.external_port = external_address[1]
+        self.ack_num = segment.header.seq_num
+        # if self.seq_num != segment.header.ack_num:
+        #     raise ValueError("Invalid handshake")
 
         return segment.header
 
     def _initiatior_handshake_messages_exchange(self):
         self._send_handshake()
+
         self._read_handshake()
         self._send_handshake()
 
