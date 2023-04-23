@@ -135,9 +135,6 @@ class StreamRDT():
             segment_as_bytes, external_address = self.socket.recvfrom(
                 SegmentRDT.MAX_DATA_SIZE + HeaderRDT.size())
             segment = SegmentRDT.from_bytes(segment_as_bytes)
-            # if(segment.header.fin):
-            #     logging.debug("FIN received")
-            #     +
             return segment, external_address
         except socket.timeout:
             logging.error("Timeout while reading")
@@ -151,16 +148,14 @@ class StreamRDT():
             self.socket.settimeout(0)
             segment_as_bytes, external_address = self.socket.recvfrom(
                 SegmentRDT.MAX_DATA_SIZE + HeaderRDT.size())
-        
             segment = SegmentRDT.from_bytes(segment_as_bytes)
             self._check_address(external_address)
             self.socket.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
             return segment, external_address
-        except Exception as e:
+        except Exception:
             self.socket.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
             return None, None 
     
-       
     def send_segment(self, data: bytes, seq_num, ack_num, syn, fin):
         logging.debug("Sending data from {}:{} ->  {}:{}".format(
             self.host, self.port, self.external_host, self.external_port))
@@ -237,15 +232,3 @@ class StreamRDT():
             except ValueError:
                 logging.debug("Invalid packet retrying")
                 retries += 1
-
-
-# Cliente -> ACK: 0,            SQN: 999 ,     DATA: ""
-# Server  -> ACK: 999   -1,     SQN: 2011,     DATA: ""
-# Cliente -> ACK: 2011 - 1,     SQN: 999 ,     DATA: ""
-
-# Server  -> ACK: 999  - 1,     SQN: 2011,      DATA: "a"
-# Cliente -> ACK: 2011 - 1,     SQN: 999  + 1,  DATA: "b"
-# Server  -> ACK: 1000 - 1,     SQN: 2011 + 1,  DATA: "a"
-# Cliente -> ACK: 2011 - 1,     SQN: 999  + 1,  DATA: "b"
-# Server  -> ACK: 1000 - 1,     SQN: 2011 + 1,  DATA: "a"
-# Cliente -> ACK: 2011 - 1,     SQN: 999  + 1,  DATA: "b"
