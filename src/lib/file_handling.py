@@ -1,8 +1,7 @@
 import logging
+import os
 
-
-class FileHandlerError(Exception):
-    pass
+from lib.exceptions import FileHandlerError
 
 
 # Mainly an exception handler for whenever an error occurs at
@@ -11,18 +10,28 @@ class FileHandlerError(Exception):
 class FileHandler:
 
     ALL_DATA = -1
-    MAX_READ_SIZE = 2**20
+    MAX_READ_SIZE = 1024
 
     def __init__(self, file_path: str, mode: str):
         self.file_path = file_path
         self.mode = mode
         try:
             self.file = open(file_path, mode)
-            logging.debug("Opened file: " + file_path)
+            if mode == "wb":
+                logging.debug(f"Created file in: {file_path}; write mode")
+            elif mode == "rb":
+                logging.debug(f"Opened file in: {file_path}; read mode")
         except Exception as e:
             logging.error(e)
             logging.error("Error opening file: " + file_path)
             raise FileHandlerError("Error opening file")
+
+    def size(self):
+        return os.path.getsize(self.file_path)
+
+    @classmethod
+    def file_exists(cls, file_path):
+        return os.path.isfile(file_path)
 
     def read(self, read_size):
         try:

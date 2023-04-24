@@ -1,3 +1,4 @@
+import logging
 from lib.constant import SelectedProtocol
 from lib.log_setup import configure_logger
 from lib.parser import parse_server_args
@@ -12,7 +13,11 @@ def main():
 
     # create new server from class
     server = ServerRDT(args.host, args.port, protocol)
-    server.run()
+    try:
+        server.run()
+    except Exception as e:
+        logging.error("Error running server: " + str(e))
+        exit(1)
 
 
 if __name__ == "__main__":

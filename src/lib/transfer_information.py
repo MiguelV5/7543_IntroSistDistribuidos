@@ -1,7 +1,7 @@
 
 import ctypes
 
-from lib.sockets_rdt.application_header import ApplicationHeaderRDT
+from lib.segment_encoding.application_header import ApplicationHeaderRDT
 
 
 class TransferInformation():

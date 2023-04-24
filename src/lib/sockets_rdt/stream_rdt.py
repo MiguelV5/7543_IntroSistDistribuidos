@@ -1,16 +1,11 @@
-
-
 import logging
 import socket
 from typing import Tuple
 from lib.constant import DEFAULT_SOCKET_RECV_TIMEOUT,  SelectedProtocol
+from lib.exceptions import AssumeAlreadyConnectedError
 from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
 from lib.protocols.stop_and_wait import StopAndWait, SelectiveRepeat
-
-
-class AssumeAlreadyConnectedError(Exception):
-    pass
 
 
 class StreamRDT():
@@ -87,7 +82,8 @@ class StreamRDT():
         return self.protocol.read()
 
     def close_external_connection(self):
-        logging.debug("Closing external connection")
+        logging.debug(
+            f"Closing external connection with ({self.external_host}:{self.external_port})")
         retries = 0
         while retries < self.MAX_CLOSE_RETRIES:
             self.send_segment(b'', self.seq_num, self.ack_num, False, True)
@@ -104,11 +100,7 @@ class StreamRDT():
                 retries += 1
                 continue
 
-            # TODO: Que pasa si el segmento que recibo no es un fin?
-            # Puede que todavia no se haya recibido todo lo de un archivo
-
     def close(self):
-        logging.debug("Closing socket")
         self.close_external_connection()
         self.socket.close()
 

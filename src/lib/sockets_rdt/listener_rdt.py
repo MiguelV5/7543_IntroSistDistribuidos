@@ -3,7 +3,7 @@
 import logging
 import socket
 from lib.constant import SelectedProtocol
-from lib.sockets_rdt.application_header import ApplicationHeaderRDT
+from lib.segment_encoding.application_header import ApplicationHeaderRDT
 
 from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
@@ -18,7 +18,7 @@ class ListenerRDT():
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(('', self.port))
-        self.socket.settimeout(5)
+        self.socket.settimeout(None)  # Desired for the listener
         self.protocol = protocol
 
     def _check_first_header(self, header: HeaderRDT):
@@ -32,9 +32,8 @@ class ListenerRDT():
             raise Exception("Invalid fin")
 
     def listen(self):
-        logging.info("Waiting for incoming connection")
-
         while True:
+            logging.info("Listening for incoming connections")
             try:
                 data, external_address = self.socket.recvfrom(
                     HeaderRDT.size() + ApplicationHeaderRDT.size())

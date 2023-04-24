@@ -1,5 +1,7 @@
 import logging
 
+from lib.exceptions import ExternalConnectionClosed
+
 
 class SlidingWindow:
 
@@ -39,8 +41,10 @@ class SlidingWindow:
         for _ in range(positions_to_move):
             self.sent_list.append(False)
 
+        print(f">>>>>>>> PRE UPDATED current_seq_num: {self.current_seq_num}")
         self.data = self.data[positions_to_move:]
         self.current_seq_num += positions_to_move
+        print(f">>>>>>>> UPDATED current_seq_num: {self.current_seq_num}")
 
     def get_sent(self, seq_num):
         return self.sent_list[seq_num - self.current_seq_num]
@@ -148,6 +152,11 @@ class SelectiveRepeat:
             if received_segment.header.syn:
                 logging.debug("[PROTOCOL] Received outdated handshake segment")
                 continue
+            if received_segment.header.fin:
+                logging.debug(
+                    "[PROTOCOL] Received fin segment, must close connection")
+                raise ExternalConnectionClosed(
+                    "Connection closed by external host")
 
             received_seq_num = received_segment.header.seq_num
             # received_ack_num = received_segment.header.ack_num
@@ -155,7 +164,7 @@ class SelectiveRepeat:
 
             # send ack
             logging.info(
-                f"[PROTOCOL] Sending Ack segment seq_num: {self.stream.seq_num} | data: {b''} | ack_num: {received_seq_num} | syn: False | fin: False")
+                f"[PROTOCOL] Sending Ack segment seq_num: {self.stream.seq_num} | data: {b''} | ack_num: {received_seq_num} | syn: {received_segment.header.syn} | fin: {received_segment.header.fin}")
             self.stream.send_segment(
                 b'', self.stream.seq_num, received_seq_num, False, False)
 
@@ -169,6 +178,9 @@ class SelectiveRepeat:
 
             return read_data
 
+        if retries == SlidingWindow.MAX_TIMEOUT_RETRIES:
+            raise TimeoutError("Multiple timeouts while tryng to read data")
+
     def send(self, data_segments):
         window = SlidingWindow(
             data_segments, self.window_size, self.stream.seq_num)
@@ -179,11 +191,17 @@ class SelectiveRepeat:
                 try:
                     received_segment, external_addres = self.stream.read_segment(
                         True)
+                    if received_segment.header.fin:
+                        logging.debug(
+                            "[PROTOCOL] Received fin segment, must close connection")
+                        raise ExternalConnectionClosed(
+                            "Connection closed by external host")
+
                     received_seq_num = received_segment.header.seq_num
                     received_segment_data = received_segment.data
                     received_ack_num = received_segment.header.ack_num
                     logging.info(
-                        f"[PROTOCOL] Received segment {external_addres} seq_num: {received_seq_num} | data: {received_segment_data} | ack_num: {received_ack_num} | syn: False | fin: False")
+                        f"[PROTOCOL] Received segment {external_addres} seq_num: {received_seq_num} | ack_num: {received_ack_num} | syn: {received_segment.header.syn} | fin: {received_segment.header.fin}")
                     window.set_ack(received_ack_num)
                     retries = 0
                     continue
@@ -214,3 +232,8 @@ class SelectiveRepeat:
                 f"[PROTOCOL] Received segment {external_addres} seq_num: {received_seq_num} | data: {received_segment_data} | ack_num: {received_ack_num} | syn: False | fin: False")
             window.set_ack(received_ack_num)
             retries = 0
+
+        if retries >= SlidingWindow.MAX_TIMEOUT_RETRIES:
+            raise TimeoutError(
+                "Multiple timeouts while tryng to send data and receive corresponding acks"
+            )
