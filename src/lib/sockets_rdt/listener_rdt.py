@@ -69,6 +69,7 @@ class ListenerRDT():
 
 
 class AccepterRDT():
+
     def __init__(self, listener: ListenerRDT, first_segment, external_address):
         self.host = listener.host
         self.first_segment = first_segment

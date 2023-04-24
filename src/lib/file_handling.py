@@ -10,6 +10,8 @@ class FileHandlerError(Exception):
 # Instantiation of this class will open the given file
 class FileHandler:
 
+    ALL_DATA = -1
+
     def __init__(self, file_path: str, mode: str):
         self.file_path = file_path
         self.mode = mode

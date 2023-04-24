@@ -137,7 +137,8 @@ class SelectiveRepeat:
         while retries < SlidingWindow.MAX_TIMEOUT_RETRIES:
             try:
                 # Reading segment
-                received_segment, external_addres = self.stream.read_segment()
+                received_segment, external_addres = self.stream.read_segment(
+                    True)
             except Exception:
                 retries += 1
                 continue
@@ -174,7 +175,7 @@ class SelectiveRepeat:
             if not window.has_available_segments_to_send():
                 try:
                     received_segment, external_addres = \
-                        self.stream.read_segment()
+                        self.stream.read_segment(True)
                     received_seq_num = received_segment.header.seq_num
                     received_segment_data = received_segment.data
                     received_ack_num = received_segment.header.ack_num
@@ -200,7 +201,7 @@ class SelectiveRepeat:
             window.set_sent(sent_seq_num, True)
 
             received_segment, external_addres = \
-                self.stream.read_segment_non_blocking()
+                self.stream.read_segment_non_blocking(True)
             if received_segment is None:
                 continue
             received_seq_num = received_segment.header.seq_num

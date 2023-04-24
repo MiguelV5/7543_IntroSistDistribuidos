@@ -70,6 +70,3 @@ class ApplicationHeaderRDT():
 
         file_name = file_name.decode('utf-8').strip('\x00')
         return cls(transfer_type, file_name, file_size)
-
-    # TODO: agregar un método para que se cree a partir de un
-    # TransferInformation

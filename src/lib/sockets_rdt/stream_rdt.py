@@ -26,18 +26,20 @@ class StreamRDT():
     def __init__(self, selected_protocol, external_host, external_port,
                  seq_num, ack_num, host, port=None):
 
-        self.selected_protocol = selected_protocol
         self.external_host = external_host
         self.external_port = external_port
-        self.host = host
-        self.port = port
+
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(('', 0 if port is None else port))
-        self.port = self.socket.getsockname()[1]
         self.socket.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
+
+        self.host = host
+        self.port = self.socket.getsockname()[1]
 
         self.seq_num = seq_num
         self.ack_num = ack_num
+
+        self.selected_protocol = selected_protocol
         self.protocol = self._select_protocol()
 
     @classmethod
@@ -62,9 +64,8 @@ class StreamRDT():
             protocol, external_host, external_port, cls.START_CONNECT_SEQ,
             StreamRDT.START_ACK, 'localhost'
         )
-        logging.info("Connecting to {}:{} with my port: {}".format(
+        logging.info("[CONNECT] Connecting to {}:{} with my port: {}".format(
             external_host, external_port, stream.port))
-        # TODO Pasarle todo lo que se hardcodea en el HandshakeHeader
         stream._run_handshake_as_initiator()
         return stream
 
@@ -73,15 +74,9 @@ class StreamRDT():
 
     # ======================== FOR PUBLIC USE ========================
 
-    def _select_protocol(self):
-        mss = SegmentRDT.get_max_segment_size()
-        protocol = StopAndWait(self, mss)
-        if self.selected_protocol == SelectedProtocol.SELECTIVE_REPEAT:
-            protocol = SelectiveRepeat(self, 5, mss)
-        return protocol
-
     def send(self, data: bytes):
         mss = SegmentRDT.get_max_segment_size()
+
         data_segments = []
         for i in range(0, len(data), mss):
             data_segments.append(data[i:i+mss])
@@ -97,7 +92,7 @@ class StreamRDT():
         while retries < self.MAX_CLOSE_RETRIES:
             self.send_segment(b'', self.seq_num, self.ack_num, False, True)
             try:
-                segment, external_address = self.read_segment()
+                segment, external_address = self.read_segment(True)
                 self._check_address(external_address)
                 if segment.header.fin:
                     logging.debug("External connection closed")
@@ -117,6 +112,15 @@ class StreamRDT():
         self.close_external_connection()
         self.socket.close()
 
+    # ======================== FOR PRIVATE USE ========================
+
+    def _select_protocol(self):
+        mss = SegmentRDT.get_max_segment_size()
+        protocol = StopAndWait(self, mss)
+        if self.selected_protocol == SelectedProtocol.SELECTIVE_REPEAT:
+            protocol = SelectiveRepeat(self, 5, mss)
+        return protocol
+
     def _check_address(
         self, external_address
     ):
@@ -125,19 +129,15 @@ class StreamRDT():
         elif external_address[1] != self.external_port:
             raise ValueError("Invalid external_port")
 
-        # TODO posible check de header (syn y fin)
-    # TODO  def _check_segment_at_handshake
-    # TODO  def _check_segment_at_close
-
-    # ======================== FOR PRIVATE USE ========================
-
-    def read_segment(self) -> Tuple[SegmentRDT, tuple]:
+    def read_segment(self, check_address) -> Tuple[SegmentRDT, tuple]:
         try:
             segment_as_bytes, external_address = self.socket.recvfrom(
                 SegmentRDT.MAX_DATA_SIZE + HeaderRDT.size())
-            logging.debug("Received data from {}:{} ->  {}:{}".format(
+            logging.debug("[READ SEGMENT] Received data from {}:{} ->  {}:{}".format(
                 external_address[0], external_address[1], self.host, self.port)
             )
+            if (check_address):
+                self._check_address(external_address)
             segment = SegmentRDT.from_bytes(segment_as_bytes)
             return segment, external_address
         except socket.timeout:
@@ -147,13 +147,14 @@ class StreamRDT():
             logging.debug("Invalid segment received:  " + str(e))
             raise ValueError("Invalid segment received:  " + str(e))
 
-    def read_segment_non_blocking(self):
+    def read_segment_non_blocking(self, check_address) -> Tuple[SegmentRDT, tuple]:
         try:
             self.socket.settimeout(0)
             segment_as_bytes, external_address = self.socket.recvfrom(
                 SegmentRDT.MAX_DATA_SIZE + HeaderRDT.size())
             segment = SegmentRDT.from_bytes(segment_as_bytes)
-            self._check_address(external_address)
+            if (check_address):
+                self._check_address(external_address)
             self.socket.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
             return segment, external_address
         except Exception:
@@ -180,9 +181,10 @@ class StreamRDT():
 
     def _read_handshake(self):
         try:
-            segment, external_address = self.read_segment()
+            segment, external_address = self.read_segment(True)
         except TimeoutError:
-            raise TimeoutError("Timeout while reading handshake")
+            raise TimeoutError(
+                "[HANDSHAK READ] Timeout while reading handshake")
 
         self.external_host = external_address[0]
         self.external_port = external_address[1]
@@ -190,13 +192,14 @@ class StreamRDT():
         if self.seq_num != segment.header.ack_num:
             logging.error(
                 f"seq_num: {self.seq_num} , ack_num: {segment.header.ack_num}")
-            raise ValueError("Invalid handshake")
+            raise ValueError("[HANDSHAK READ] Invalid handshake")
         if not segment.header.syn:
-            logging.debug("syn: " + str(segment.header.syn))
+            logging.debug("[HANDSHAK READ] Invalid syn received" +
+                          str(segment.header.syn))
             raise AssumeAlreadyConnectedError
         if segment.header.fin:
-            logging.error("fin: " + str(segment.header.fin))
-            raise ValueError("Invalid handshake")
+            logging.error("[HANDSHAK READ] fin: " + str(segment.header.fin))
+            raise ValueError("[HANDSHAK READ] Invalid handshake")
 
         return segment.header
 
