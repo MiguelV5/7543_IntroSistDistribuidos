@@ -11,6 +11,7 @@ class FileHandlerError(Exception):
 class FileHandler:
 
     ALL_DATA = -1
+    MAX_READ_SIZE = 2**20
 
     def __init__(self, file_path: str, mode: str):
         self.file_path = file_path

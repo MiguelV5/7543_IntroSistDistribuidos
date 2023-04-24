@@ -2,7 +2,6 @@ import logging
 import os
 from lib.constant import SelectedProtocol, SelectedTransferType
 from lib.file_handling import FileHandler, FileHandlerError
-from lib.segment_encoding.segment_rdt import SegmentRDT
 from lib.sockets_rdt.application_header import ApplicationHeaderRDT
 from lib.sockets_rdt.stream_rdt import StreamRDT
 from crc import Calculator, Crc8
@@ -21,7 +20,7 @@ class ClientRDT:
 
         file_size = os.path.getsize(file_src_path)
         logging.info(
-            f"[UPLOAD] Client RDT starting uploading file: {file_name} of size: {file_size} bytes"  # noqa E501
+            f"[UPLOAD] Client RDT starting uploading file: {file_name} of size: {file_size} bytes"
         )
         transfer_type = SelectedTransferType.UPLOAD
 
@@ -32,39 +31,31 @@ class ClientRDT:
             )
         except (Exception, TimeoutError) as e:
             logging.error("Error trying to connect to the server: " + str(e))
-            exit(1)
+            raise e
 
         logging.info("[UPLOAD] Client connected to: {}:{}".format(
             stream.external_host, stream.external_port))
 
         file = FileHandler(file_src_path, "rb")
-        file_data = file.read(FileHandler.ALL_DATA)
         app_header = ApplicationHeaderRDT(
             transfer_type, file_name, file_size
         )
-        app_header = app_header.as_bytes()
-        stream.send(app_header + file_data)
+        data = app_header.as_bytes()
+        stream.send(data)
 
-        # chunk_size = SegmentRDT.get_max_segment_size() - ApplicationHeaderRDT.size()
+        chunk_size = FileHandler.MAX_READ_SIZE
 
-        # for i in range(0, file_size, chunk_size):
-        #     logging.debug("Sending chunk: " + str(i))
-        #     try:
-        #         data = file.read(chunk_size)
-        #     except FileHandlerError as e:
-        #         logging.error("Error reading file: " + str(e))
-        #         stream.close()
-        #         file.close()
-        #         exit(1)
+        for i in range(0, file_size, chunk_size):
+            logging.debug("Sending chunk: " + str(i))
+            try:
+                data = file.read(chunk_size)
+            except FileHandlerError as e:
+                logging.error("Error reading file: " + str(e))
+                stream.close()
+                file.close()
+                raise e
 
-        #     if i == 0:
-        #         app_header = ApplicationHeaderRDT(
-        #             transfer_type, file_name, file_size
-        #         )
-        #         logging.debug(f"Sending application header: {app_header}")
-        #         data = app_header.as_bytes() + data
-
-        #     stream.send(data)
+            stream.send(data)
 
         file.close()
         stream.close()

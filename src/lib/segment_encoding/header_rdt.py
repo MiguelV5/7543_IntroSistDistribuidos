@@ -14,8 +14,8 @@ class HeaderRDT:
     CHECKSUM_SIZE = 1
 
     def __repr__(self):
-        return "HeaderRDT(protocol={}, data_size={}, seq_num={}, ack_num={}, syn={}, fin={}, checksum={})".format(  # noqa E501
-            self.protocol, self.data_size, self.seq_num, self.ack_num, self.syn, self.fin, self.checksum) # noqa E501
+        return "HeaderRDT(protocol={}, data_size={}, seq_num={}, ack_num={}, syn={}, fin={}, checksum={})".format(
+            self.protocol, self.data_size, self.seq_num, self.ack_num, self.syn, self.fin, self.checksum)
 
     def __str__(self):
         return self.__repr__()

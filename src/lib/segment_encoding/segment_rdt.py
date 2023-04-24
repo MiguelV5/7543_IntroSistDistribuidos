@@ -1,5 +1,6 @@
 from lib.segment_encoding.header_rdt import HeaderRDT
 
+
 class SegmentRDT:
     MAX_DATA_SIZE = 1024
 

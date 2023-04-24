@@ -17,7 +17,7 @@ class ApplicationHeaderRDT():
     CHECKSUM_SIZE = 1
 
     def __repr__(self):
-        return "ApplicationHeaderRDT(transfer_type={}, file_name={}, file_size={})".format(  # noqa E501
+        return "ApplicationHeaderRDT(transfer_type={}, file_name={}, file_size={})".format(
             self.transfer_type, self.file_name, self.file_size)
 
     def __str__(self):
@@ -55,7 +55,7 @@ class ApplicationHeaderRDT():
     def from_bytes(cls, data):
 
         if len(data) < cls.size():
-            raise ValueError("Received data size is less than header size")
+            raise ValueError("Received data size is less than App_header size")
 
         checksum = data[-1]
         data = data[:-1]

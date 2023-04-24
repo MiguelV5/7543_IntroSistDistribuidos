@@ -53,8 +53,7 @@ class SlidingWindow:
         return self.current_seq_num == self.final_seq_num + 1
 
     def is_available_segment_to_send(self, seq_num):
-        return (self.get_sent(seq_num) is False) and \
-            (self.get_ack(seq_num) is False)
+        return (self.get_sent(seq_num) is False) and (self.get_ack(seq_num) is False)
 
     def has_available_segments_to_send(self):
         i = self.current_seq_num
@@ -72,7 +71,13 @@ class SlidingWindow:
     def get_first_available_segment(self):
         i = self.current_seq_num
         while (i <= self.final_seq_num) and (i < self.current_seq_num + self.window_size):
+            print(
+                f">>>>>>>>>>>>>>>>>   i:  {i},  data: {self.data[i - self.current_seq_num]}")
             if self.is_available_segment_to_send(i):
+
+                print(
+                    f">>>>>>>>>>>>>>>>>  (IF) i:  {i},  data: {self.data[i - self.current_seq_num]}")
+
                 return i, self.data[i - self.current_seq_num]
             i += 1
         return None, None
@@ -124,14 +129,12 @@ class SelectiveRepeat:
 
     def __init__(self, stream, window_size, mss: int):
         self.stream = stream
-        self.seq_num = self.stream.seq_num
-        self.ack_num = self.stream.ack_num
         self.window_size = window_size
         self.mss = mss
 
     def read(self):
 
-        buf_sorter = BufferSorter(self.ack_num)
+        buf_sorter = BufferSorter(self.stream.ack_num)
 
         retries = 0
         while retries < SlidingWindow.MAX_TIMEOUT_RETRIES:
@@ -152,15 +155,15 @@ class SelectiveRepeat:
 
             # send ack
             logging.info(
-                f"[PROTOCOL] Sending Ack segment seq_num: {self.seq_num} | data: {b''} | ack_num: {received_seq_num} | syn: False | fin: False")  # noqa E501
+                f"[PROTOCOL] Sending Ack segment seq_num: {self.stream.seq_num} | data: {b''} | ack_num: {received_seq_num} | syn: False | fin: False")
             self.stream.send_segment(
-                b'', self.seq_num, received_seq_num, False, False)
+                b'', self.stream.seq_num, received_seq_num, False, False)
 
-            logging.error(f">>>>>> [PROTOCOL] buffsorter: {buf_sorter}")
+            logging.debug(f">>>>>> [PROTOCOL] buffsorter: {buf_sorter}")
 
             buf_sorter.add_segment(received_seq_num, received_segment_data)
 
-            logging.error(f">>>>>> [PROTOCOL] buffsorter: {buf_sorter}")
+            logging.debug(f">>>>>> [PROTOCOL] buffsorter: {buf_sorter}")
 
             read_data = buf_sorter.pop_available_data()
 
@@ -168,19 +171,19 @@ class SelectiveRepeat:
 
     def send(self, data_segments):
         window = SlidingWindow(
-            data_segments, self.window_size, self.seq_num)
+            data_segments, self.window_size, self.stream.seq_num)
 
         retries = 0
         while not window.finished() and retries < SlidingWindow.MAX_TIMEOUT_RETRIES:
             if not window.has_available_segments_to_send():
                 try:
-                    received_segment, external_addres = \
-                        self.stream.read_segment(True)
+                    received_segment, external_addres = self.stream.read_segment(
+                        True)
                     received_seq_num = received_segment.header.seq_num
                     received_segment_data = received_segment.data
                     received_ack_num = received_segment.header.ack_num
                     logging.info(
-                        f"[PROTOCOL] Received segment {external_addres} seq_num: {received_seq_num} | data: {received_segment_data} | ack_num: {received_ack_num} | syn: False | fin: False")  # noqa E501
+                        f"[PROTOCOL] Received segment {external_addres} seq_num: {received_seq_num} | data: {received_segment_data} | ack_num: {received_ack_num} | syn: False | fin: False")
                     window.set_ack(received_ack_num)
                     retries = 0
                     continue
@@ -195,19 +198,19 @@ class SelectiveRepeat:
 
             # send segment
             logging.info(
-                f"[PROTOCOL] Sending segment seq_num: {sent_seq_num} | ack_num: {self.ack_num} | syn: False | fin: False")  # noqa E501
+                f"[PROTOCOL] Sending segment seq_num: {sent_seq_num} | ack_num: {self.stream.ack_num} | syn: False | fin: False")
             self.stream.send_segment(
-                segment, sent_seq_num, self.ack_num, False, False)
+                segment, sent_seq_num, self.stream.ack_num, False, False)
             window.set_sent(sent_seq_num, True)
 
-            received_segment, external_addres = \
-                self.stream.read_segment_non_blocking(True)
+            received_segment, external_addres = self.stream.read_segment_non_blocking(
+                True)
             if received_segment is None:
                 continue
             received_seq_num = received_segment.header.seq_num
             received_segment_data = received_segment.data
             received_ack_num = received_segment.header.ack_num
             logging.info(
-                f"[PROTOCOL] Received segment {external_addres} seq_num: {received_seq_num} | data: {received_segment_data} | ack_num: {received_ack_num} | syn: False | fin: False")  # noqa E501
+                f"[PROTOCOL] Received segment {external_addres} seq_num: {received_seq_num} | data: {received_segment_data} | ack_num: {received_ack_num} | syn: False | fin: False")
             window.set_ack(received_ack_num)
             retries = 0

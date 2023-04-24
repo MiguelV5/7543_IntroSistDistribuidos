@@ -9,19 +9,6 @@ from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
 from lib.sockets_rdt.stream_rdt import StreamRDT
 
-# import signal
-# global Sentry
-# Sentry = True
-
-
-# def SignalHandler_SIGINT(SignalNumber, Frame):
-#     global Sentry
-#     Sentry = False
-#     print("SIGINT received. Exiting...")
-
-
-# signal.signal(signal.SIGINT, SignalHandler_SIGINT)
-
 
 class ListenerRDT():
 

@@ -181,7 +181,7 @@ class StreamRDT():
 
     def _read_handshake(self):
         try:
-            segment, external_address = self.read_segment(True)
+            segment, external_address = self.read_segment(False)
         except TimeoutError:
             raise TimeoutError(
                 "[HANDSHAK READ] Timeout while reading handshake")
@@ -235,10 +235,8 @@ class StreamRDT():
                 self._initiatior_handshake_messages_exchange()
                 return
             except TimeoutError:
-                # logging.debug("Timeout, retrying")
                 retries += 1
             except ValueError:
-                # logging.debug("Invalid packet retrying")
                 retries += 1
 
         logging.error("Connection exhausted {} retries".format(
@@ -257,10 +255,8 @@ class StreamRDT():
                 self._listener_handshake_messages_exchange()
                 return
             except TimeoutError:
-                # logging.debug("Timeout, retrying")
                 retries += 1
             except ValueError:
-                # logging.debug("Invalid packet retrying")
                 retries += 1
 
         logging.error("Connection exhausted {} retries".format(
