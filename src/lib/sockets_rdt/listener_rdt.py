@@ -9,10 +9,23 @@ from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
 from lib.sockets_rdt.stream_rdt import StreamRDT
 
+# import signal
+# global Sentry
+# Sentry = True
+
+
+# def SignalHandler_SIGINT(SignalNumber, Frame):
+#     global Sentry
+#     Sentry = False
+#     print("SIGINT received. Exiting...")
+
+
+# signal.signal(signal.SIGINT, SignalHandler_SIGINT)
+
 
 class ListenerRDT():
 
-    def __init__(self, host, port, protocol = SelectedProtocol.STOP_AND_WAIT):
+    def __init__(self, host, port, protocol=SelectedProtocol.STOP_AND_WAIT):
 
         self.host = host
         self.port = port
@@ -33,6 +46,7 @@ class ListenerRDT():
 
     def listen(self):
         logging.info("Waiting for incoming connection")
+
         while True:
             try:
                 data, external_address = self.socket.recvfrom(
@@ -40,20 +54,38 @@ class ListenerRDT():
                 segment = SegmentRDT.from_bytes(data)
                 self._check_first_header(segment.header)
                 break
+            except KeyboardInterrupt:
+                raise KeyboardInterrupt
             except socket.timeout:
                 continue
             except (Exception, ValueError) as e:
                 logging.error("Invalid segment received: {}".format(e))
                 continue
 
+        logging.debug("[HANDSHAKE] LISTENER 1 (read)")
         logging.info("Conection attempt from {}".format(external_address))
+
+        return AccepterRDT(self, segment, external_address)
+
+
+class AccepterRDT():
+    def __init__(self, listener: ListenerRDT, first_segment, external_address):
+        self.host = listener.host
+        self.first_segment = first_segment
+        self.external_host = external_address[0]
+        self.external_port = external_address[1]
+        self.protocol = listener.protocol
+
+    def accept(self):
 
         stream = StreamRDT.from_listener(
             self.protocol,
-            external_address[0], external_address[1],
-            segment, self.host
+            self.external_host, self.external_port,
+            self.first_segment, self.host
         )
 
-        logging.info("Connection established with {}".format(external_address))
+        logging.info("Connection established with ({}:{})".format(
+            self.external_host, self.external_port)
+        )
 
         return stream

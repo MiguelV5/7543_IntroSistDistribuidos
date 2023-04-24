@@ -4,8 +4,7 @@ from lib.constant import SelectedProtocol
 from lib.file_handling import FileHandler
 from lib.sockets_rdt.application_header import ApplicationHeaderRDT
 
-from lib.sockets_rdt.listener_rdt import ListenerRDT
-from lib.sockets_rdt.stream_rdt import StreamRDT
+from lib.sockets_rdt.listener_rdt import AccepterRDT, ListenerRDT
 
 
 class ServerRDT:
@@ -20,10 +19,17 @@ class ServerRDT:
         listener = ListenerRDT(self.host, self.port, self.protocol)
 
         while True:
-            stream = listener.listen()
+            try:
+                accepter = listener.listen()
+            except KeyboardInterrupt:
+                logging.debug("Keyboard interrupt received. Exiting...")
+                break
+            except Exception as e:
+                logging.error("Error listening: " + str(e))
+                continue
 
-            client_thread = Thread(target=self.thread_function,
-                                   args=(stream,))
+            client_thread = Thread(target=self.individual_connection_handler,
+                                   args=(accepter,))
             self.client_threads.append(client_thread)
             client_thread.start()
 
@@ -32,18 +38,24 @@ class ServerRDT:
                     self.client_threads.remove(thread)
                 thread.join()
 
-    def thread_function(
-            self, stream: StreamRDT
+        logging.debug("joining threads")
+        for thread in self.client_threads:
+            thread.join()
+
+    def individual_connection_handler(
+            self, accepter: AccepterRDT
     ):
-        # aca hay que ir leyendo con read hasta que complete el archivo
-        # como completamos el archivo? porque el header tiene el size
-        # como se obtiene el size se lee del primer paquete el header de aplicacion
+
+        try:
+            stream = accepter.accept()
+        except Exception as e:
+            logging.error("Error accepting connection: " + str(e))
+            exit(1)
 
         data = stream.read()
 
         try:
             app_header_bytes = data[:ApplicationHeaderRDT.size()]
-
             app_header = ApplicationHeaderRDT.from_bytes(app_header_bytes)
             data = data[ApplicationHeaderRDT.size():]
         except Exception as e:

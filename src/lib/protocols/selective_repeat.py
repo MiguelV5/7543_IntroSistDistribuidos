@@ -79,6 +79,13 @@ class SlidingWindow:
 
 
 class BufferSorter:
+
+    def __repr__(self):
+        return f'BufferSorter(curr_seq_num={self.curr_seq_num}, buffer={self.buffer})'
+
+    def __str__(self):
+        return self.__repr__()
+
     def __init__(self, initial_seq_num=0):
         self.curr_seq_num = initial_seq_num
         self.buffer = []
@@ -126,12 +133,18 @@ class SelectiveRepeat:
 
         buf_sorter = BufferSorter(self.ack_num)
 
-        while True:
+        retries = 0
+        while retries < SlidingWindow.MAX_TIMEOUT_RETRIES:
             try:
                 # Reading segment
                 received_segment, external_addres = self.stream.read_segment()
             except Exception:
+                retries += 1
                 continue
+            if received_segment.header.syn:
+                logging.debug("[PROTOCOL] Received outdated handshake segment")
+                continue
+
             received_seq_num = received_segment.header.seq_num
             # received_ack_num = received_segment.header.ack_num
             received_segment_data = received_segment.data
@@ -142,7 +155,12 @@ class SelectiveRepeat:
             self.stream.send_segment(
                 b'', self.seq_num, received_seq_num, False, False)
 
+            logging.error(f">>>>>> [PROTOCOL] buffsorter: {buf_sorter}")
+
             buf_sorter.add_segment(received_seq_num, received_segment_data)
+
+            logging.error(f">>>>>> [PROTOCOL] buffsorter: {buf_sorter}")
+
             read_data = buf_sorter.pop_available_data()
 
             return read_data
