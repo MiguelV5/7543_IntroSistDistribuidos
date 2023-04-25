@@ -39,7 +39,6 @@ class ServerRDT:
             client_thread = Thread(target=self.server_port_handler,
                                    args=(accepter,))
             self.server_ports_threads.append(client_thread)
-            logging.debug(">>>>>>>>>>>>>> NEW THREAD CREATED <<<<<<<<<<<<<<<<")
             client_thread.start()
 
             for thread in self.server_ports_threads:
@@ -56,6 +55,7 @@ class ServerRDT:
             stream = accepter.accept()
 
             initial_data = stream.read()
+
             app_header_bytes = initial_data[:ApplicationHeaderRDT.size()]
             app_header = ApplicationHeaderRDT.from_bytes(app_header_bytes)
         except Exception as e:
@@ -86,10 +86,13 @@ class ServerRDT:
         file_handler = FileHandler(
             DEFAULT_SV_STORAGE + file_name, file_name, "rb")
 
-        if FileHandler.file_exists(file_handler.get_file_name()) is False:
+        if FileHandler.file_exists(file_handler.get_file_path()) is False:
             app_header = ApplicationHeaderRDT(
                 self.NO_SUCH_FILE, SelectedTransferType.DOWNLOAD, 0)
             stream.send(app_header.as_bytes())
+            logging.info(
+                f"[SERVER UPLOAD] Sending App Header, file does not exist: {app_header}")
+            return
 
         uploader = Uploader(stream, file_handler)
         uploader.run()

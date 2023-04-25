@@ -12,7 +12,7 @@ def main():
     protocol = SelectedProtocol.SELECTIVE_REPEAT if args.selective_repeat else SelectedProtocol.STOP_AND_WAIT
 
     client = ClientRDT(args.host, args.port, protocol)
-    client.upload(args.file_path, args.file_name)
+    client.upload(args.src, args.name)
 
 
 if __name__ == "__main__":

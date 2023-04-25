@@ -95,7 +95,8 @@ class StreamRDT():
         if self.selected_protocol == SelectedProtocol.SELECTIVE_REPEAT:
             logging.debug("[PROTOCOL] Selected protocol: Selective Repeat")
             protocol = SelectiveRepeat(self, 5, mss)
-        logging.debug("[PROTOCOL] Selected protocol: Stop and Wait")
+        else:
+            logging.debug("[PROTOCOL] Selected protocol: Stop and Wait")
         return protocol
 
     def _check_address(
@@ -136,6 +137,7 @@ class StreamRDT():
             self._check_address(external_address)
 
         segment = SegmentRDT.from_bytes(segment_as_bytes)
+        logging.debug(f"[READ SEGMENT] Received segment {segment}")
 
         if (expected_syn != segment.header.syn):
             raise ValueError(
@@ -163,8 +165,7 @@ class StreamRDT():
             (self.external_host, self.external_port)
         )
 
-        logging.debug("[SEND SEGMENT] Sending segment {segment}".format(
-            self.host, self.port, self.external_host, self.external_port))
+        logging.debug(f"[SEND SEGMENT] Sending segment {segment}")
 
     # ---- Handshake related ----
 

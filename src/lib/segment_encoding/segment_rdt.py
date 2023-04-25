@@ -30,14 +30,10 @@ class SegmentRDT:
         header_size = HeaderRDT.size()
 
         if len(data) < header_size:
-            raise ValueError("Received data size is less than header size")
+            raise ValueError(
+                "[SEGMENT] Received data size is less than header size")
 
         header = HeaderRDT.from_bytes(data[:header_size])
         data = data[header_size:]
 
-        # TODO check if data size is correct according with header info
-
         return cls(header, data)
-
-
-segment = SegmentRDT

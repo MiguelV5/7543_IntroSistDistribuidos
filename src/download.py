@@ -12,4 +12,4 @@ if __name__ == "__main__":
     protocol = SelectedProtocol.SELECTIVE_REPEAT if args.selective_repeat else SelectedProtocol.STOP_AND_WAIT
 
     client = ClientRDT(args.host, args.port, protocol)
-    client.download(args, args.file_name)
+    client.download(args.dst, args.name)

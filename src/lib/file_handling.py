@@ -19,13 +19,15 @@ class FileHandler:
         try:
             self.file = open(file_path, mode)
             if mode == "wb":
-                logging.debug(f"Created file in: {file_path}; write mode")
+                logging.debug(
+                    f"[FILE HANDLER] Created file in: {file_path}; write mode")
             elif mode == "rb":
-                logging.debug(f"Opened file in: {file_path}; read mode")
+                logging.debug(
+                    f"[FILE HANDLER] Opened file in: {file_path}; read mode")
         except Exception as e:
             logging.error(e)
-            logging.error("Error opening file: " + file_path)
-            raise FileHandlerError("Error opening file")
+            logging.error("[FILE HANDLER] Error opening file: " + file_path)
+            raise FileHandlerError("[FILE HANDLER] Error opening file")
 
     def size(self):
         return os.path.getsize(self.file_path)
@@ -37,24 +39,30 @@ class FileHandler:
     def get_file_name(self):
         return self.file_name
 
+    def get_file_path(self):
+        return self.file_path
+
     def read(self, read_size):
         try:
             data = self.file.read(read_size)
             logging.debug(
-                f"Reading {read_size} bytes from file: {self.file_path}"
+                f"[FILE HANDLER] Reading {read_size} bytes from file: {self.file_path}"
             )
             return data
         except Exception:
-            logging.error("Error reading from file: " + self.file_path)
-            raise FileHandlerError("Error reading from file")
+            logging.error(
+                "[FILE HANDLER] Error reading from file: " + self.file_path)
+            raise FileHandlerError("[FILE HANDLER] Error reading from file")
 
     def write(self, data):
         try:
             self.file.write(data)
-            logging.debug(f"Wrote {len(data)} bytes to file: {self.file_path}")
+            logging.debug(
+                f"[FILE HANDLER] Wrote {len(data)} bytes to file: {self.file_path}")
         except Exception:
-            logging.error("Error writing to file: " + self.file_path)
-            raise FileHandlerError("Error writing to file")
+            logging.error(
+                "[FILE HANDLER] Error writing to file: " + self.file_path)
+            raise FileHandlerError("[FILE HANDLER] Error writing to file")
 
     def close(self):
         self.file.close()

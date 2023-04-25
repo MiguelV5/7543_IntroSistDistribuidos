@@ -14,22 +14,38 @@ class Downloader():
         return SelectedTransferType.DOWNLOAD
 
     def run(self, initial_data):
+        logging.info(
+            f"[DOWNLOADER] Starting download of file: {self.file_handler.get_file_name()}")
 
         app_header_bytes = initial_data[:ApplicationHeaderRDT.size()]
         app_header = ApplicationHeaderRDT.from_bytes(app_header_bytes)
 
         if app_header.file_name != self.file_handler.get_file_name() or app_header.file_size == 0:
             raise ValueError(
-                f"[DOWNLOADER] Requesested file does not exist: {app_header.file_name}"
+                f"[DOWNLOADER] Requested file does not exist: {app_header.file_name}"
             )
+
+        logging.info(
+            f"[DOWNLOADER] Application Header received")
 
         data = initial_data[ApplicationHeaderRDT.size():]
         data_size = len(data)
 
+        logging.info(
+            f"[DOWNLOADER] New Data Received: {data}")
+
         while data_size < app_header.file_size:
-            if (data == self.file_handler.MAX_RW_SIZE):
-                self.file_handler.write(data)
-                data = b""
+            logging.info(
+                f"[DOWNLOADER] Data size: {data_size}")
+            if (data_size >= self.file_handler.MAX_RW_SIZE):
+                self.file_handler.write(data[:self.file_handler.MAX_RW_SIZE])
+                data = data[self.file_handler.MAX_RW_SIZE:]
             new_data = self.stream.read()
+            logging.info(
+                f"[DOWNLOADER] New Data Received: {new_data}")
+            logging.info(
+                f"[DOWNLOADER] Data size: {data_size}")
             data = data + new_data
             data_size += len(new_data)
+        if (len(data) != 0):
+            self.file_handler.write(data)

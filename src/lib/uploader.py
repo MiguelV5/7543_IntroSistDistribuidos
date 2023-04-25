@@ -1,5 +1,6 @@
 
 
+import logging
 from lib.constant import SelectedTransferType
 from lib.file_handling import FileHandler
 from lib.segment_encoding.application_header import ApplicationHeaderRDT
@@ -14,7 +15,9 @@ class Uploader():
         return SelectedTransferType.UPLOAD
 
     def run(self):
-        if FileHandler.file_exists(self.file_handler.get_file_name()) is False:
+        logging.info(
+            f"[UPLOADER] Starting upload of file: {self.file_handler.get_file_name()}")
+        if FileHandler.file_exists(self.file_handler.get_file_path()) is False:
             raise ValueError("[UPLOADER] File doesn't exists")
 
         app_header = ApplicationHeaderRDT(

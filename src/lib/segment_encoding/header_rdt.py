@@ -58,13 +58,14 @@ class HeaderRDT:
     def from_bytes(cls, data):
 
         if len(data) < cls.size():
-            raise ValueError("Received data size is less than header size")
+            raise ValueError(
+                "[HEADER] Received data size is less than header size")
 
         checksum = data[-1]
         data = data[:-1]
 
         if calculator.verify(data, checksum) is False:
-            raise ValueError("Checksum of HeaderRDT is not correct")
+            raise ValueError("[HEADER] Checksum of HeaderRDT is not correct")
 
         protocol, data_size, seq_num, ack_num, syn, fin = struct.unpack(
             cls.PACKET_FORMAT, data)
