@@ -2,7 +2,7 @@ import logging
 import socket
 from typing import Tuple
 from lib.utils.constant import DEFAULT_INITIATOR_SOCKET_READ_CLOSE_TIMEOUT, DEFAULT_INITIATOR_SOCKET_READ_HANDSAKE_TIMEOUT, DEFAULT_LISTENER_SOCKET_READ_HANDSAKE_TIMEOUT, DEFAULT_RECEIVER_SOCKET_READ_CLOSE_TIMEOUT, DEFAULT_SOCKET_READ_TIMEOUT,  SelectedProtocol
-from lib.utils.exceptions import AssumeAlreadyConnectedError
+from lib.utils.exceptions import AssumeAlreadyConnectedError, ExternalConnectionClosed
 from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
 from lib.protocols.stop_and_wait import StopAndWait, SelectiveRepeat
@@ -157,7 +157,8 @@ class StreamRDT():
                 "[READ SEGMENT] Invalid segment received: SYN flag set")
         if not self.closing and segment.header.fin:
             self._run_close_as_receiver()
-
+            raise ExternalConnectionClosed(
+                "[READ SEGMENT] Connection closed by external host")
         return segment, external_address
 
     def send_segment(self, data: bytes, seq_num, ack_num, syn, fin):
@@ -195,9 +196,6 @@ class StreamRDT():
 
         if self.seq_num != segment.header.ack_num:
             raise ValueError("[HANDSHAK READ] Invalid handshake")
-        if not segment.header.syn:
-            logging.debug("[HANDSHAK READ] Invalid syn received")
-            raise AssumeAlreadyConnectedError
         return segment.header
 
     def _initiatior_handshake_messages_exchange(self):
