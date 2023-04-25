@@ -10,10 +10,11 @@ from lib.exceptions import FileHandlerError
 class FileHandler:
 
     ALL_DATA = -1
-    MAX_READ_SIZE = 1024
+    MAX_RW_SIZE = 1024  # 2**16
 
-    def __init__(self, file_path: str, mode: str):
+    def __init__(self, file_path: str, file_name: str, mode: str):
         self.file_path = file_path
+        self.file_name = file_name
         self.mode = mode
         try:
             self.file = open(file_path, mode)
@@ -32,6 +33,9 @@ class FileHandler:
     @classmethod
     def file_exists(cls, file_path):
         return os.path.isfile(file_path)
+
+    def get_file_name(self):
+        return self.file_name
 
     def read(self, read_size):
         try:

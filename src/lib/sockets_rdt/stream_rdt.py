@@ -93,7 +93,9 @@ class StreamRDT():
         mss = SegmentRDT.get_max_segment_size()
         protocol = StopAndWait(self, mss)
         if self.selected_protocol == SelectedProtocol.SELECTIVE_REPEAT:
+            logging.debug("[PROTOCOL] Selected protocol: Selective Repeat")
             protocol = SelectiveRepeat(self, 5, mss)
+        logging.debug("[PROTOCOL] Selected protocol: Stop and Wait")
         return protocol
 
     def _check_address(
@@ -149,7 +151,7 @@ class StreamRDT():
 
     def send_segment(self, data: bytes, seq_num, ack_num, syn, fin):
 
-        logging.debug("Sending data from {}:{} ->  {}:{}".format(
+        logging.debug("[SEND SEGMENT] Sending data from {}:{} ->  {}:{}".format(
             self.host, self.port, self.external_host, self.external_port))
 
         header = HeaderRDT(self.selected_protocol, len(data),
@@ -160,6 +162,9 @@ class StreamRDT():
             segment.as_bytes(),
             (self.external_host, self.external_port)
         )
+
+        logging.debug("[SEND SEGMENT] Sending segment {segment}".format(
+            self.host, self.port, self.external_host, self.external_port))
 
     # ---- Handshake related ----
 
@@ -212,8 +217,6 @@ class StreamRDT():
         logging.debug("[HANDSHAKE] LISTENER 3 (read)")
 
     def _run_handshake_as_initiator(self):
-
-        # Start message exchange
         retries = 0
         while retries < self.MAX_INITIATOR_HANDSHAKE_TIMEOUT_RETRIES:
             try:

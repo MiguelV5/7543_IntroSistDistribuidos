@@ -1,4 +1,3 @@
-import logging
 from lib.client import ClientRDT
 from lib.constant import SelectedProtocol
 from lib.log_setup import configure_logger
@@ -13,9 +12,4 @@ if __name__ == "__main__":
     protocol = SelectedProtocol.SELECTIVE_REPEAT if args.selective_repeat else SelectedProtocol.STOP_AND_WAIT
 
     client = ClientRDT(args.host, args.port, protocol)
-
-    try:
-        client.download(args.name, args.dst)
-    except Exception as e:
-        logging.error("Error downloading file: " + str(e))
-        exit(1)
+    client.download(args, args.file_name)

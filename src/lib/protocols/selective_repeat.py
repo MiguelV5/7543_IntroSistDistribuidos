@@ -147,43 +147,7 @@ class SelectiveRepeat:
         self.window_size = window_size
         self.mss = mss
 
-    def read(self):
-
-        buf_sorter = BufferSorter(self.stream.ack_num)
-
-        retries = 0
-        while retries < SelectiveRepeat.MAX_TIMEOUT_RETRIES:
-            try:
-                # Reading segment
-                received_segment, _ = self.stream.read_segment(
-                    True)
-            except Exception:
-                retries += 1
-                continue
-
-            received_seq_num = received_segment.header.seq_num
-            # received_ack_num = received_segment.header.ack_num
-            received_segment_data = received_segment.data
-
-            # send ack
-            logging.info(
-                f"[PROTOCOL] Sending Ack segment seq_num: {self.stream.seq_num} | data: {b''} | ack_num: {received_seq_num} | syn: {received_segment.header.syn} | fin: {received_segment.header.fin}")
-            self.stream.send_segment(
-                b'', self.stream.seq_num, received_seq_num, False, False)
-
-            logging.debug(f">>>>>> [PROTOCOL] buffsorter: {buf_sorter}")
-
-            buf_sorter.add_segment(received_seq_num, received_segment_data)
-
-            logging.debug(f">>>>>> [PROTOCOL] buffsorter: {buf_sorter}")
-
-            read_data = buf_sorter.pop_available_data()
-            self.stream.ack_num = buf_sorter.get_current_ack_num()
-
-            return read_data
-
-        if retries == SelectiveRepeat.MAX_TIMEOUT_RETRIES:
-            raise TimeoutError("Multiple timeouts while tryng to read data")
+    # ======================== FOR PUBLIC USE ========================
 
     def send(self, data_segments):
         window = SlidingWindow(
@@ -193,15 +157,10 @@ class SelectiveRepeat:
         while not window.finished() and retries < SelectiveRepeat.MAX_TIMEOUT_RETRIES:
             if not window.has_available_segments_to_send():
                 try:
-                    received_segment, external_addres = self.stream.read_segment(
+                    received_segment, external_address = self.stream.read_segment(
                         True)
-                    window.set_ack(received_segment.header.ack_num)
-                    self.stream.seq_num = window.get_current_seq_num()
-                    retries = 0
-
-                    logging.info(
-                        f"[PROTOCOL] Received segment {segment} from {external_addres}")
-
+                    self._update_protocol(
+                        received_segment, external_address, window)
                     continue
                 except TimeoutError:
                     window.reset_sent_segments()
@@ -210,29 +169,61 @@ class SelectiveRepeat:
                 except ValueError:
                     continue
 
-            sent_seq_num, segment = window.get_first_available_segment()
+            self._send_segment(window)
 
-            # send segment
-            logging.info(
-                f"[PROTOCOL] Sending segment seq_num: {sent_seq_num} | ack_num: {self.stream.ack_num} | syn: False | fin: False")
-            self.stream.send_segment(
-                segment, sent_seq_num, self.stream.ack_num, False, False)
-            window.set_sent(sent_seq_num, True)
-
-            received_segment, external_addres = self.stream.read_segment_non_blocking(
+            received_segment, external_address = self.stream.read_segment_non_blocking(
                 True)
             if received_segment is None:
                 continue
-            received_seq_num = received_segment.header.seq_num
-            received_segment_data = received_segment.data
-            received_ack_num = received_segment.header.ack_num
-            logging.info(
-                f"[PROTOCOL] Received segment {external_addres} seq_num: {received_seq_num} | data: {received_segment_data} | ack_num: {received_ack_num} | syn: False | fin: False")
-            window.set_ack(received_ack_num)
-            self.stream.seq_num = window.get_current_seq_num()
+
+            self._update_protocol(
+                received_segment, external_address, window)
             retries = 0
 
         if retries >= SelectiveRepeat.MAX_TIMEOUT_RETRIES:
             raise TimeoutError(
                 "[PROTOCOL] Multiple timeouts while tryng to send data and receive corresponding acks"
             )
+
+    def read(self):
+
+        buffer_sorter = BufferSorter(self.stream.ack_num)
+
+        retries = 0
+        while retries < SelectiveRepeat.MAX_TIMEOUT_RETRIES:
+            try:
+                received_segment, _ = self.stream.read_segment(
+                    True)
+            except TimeoutError:
+                retries += 1
+                continue
+            except ValueError:
+                continue
+
+            self._send_ack(received_segment, buffer_sorter)
+            return buffer_sorter.pop_available_data()
+
+        if retries >= SelectiveRepeat.MAX_TIMEOUT_RETRIES:
+            raise TimeoutError(
+                "[PROTOCOL] Multiple timeouts while tryng to read data")
+
+    # ======================== FOR PRIVATE USE ========================
+
+    def _update_protocol(self, received_segment, external_addresss, window: SlidingWindow):
+        logging.info(
+            f"[PROTOCOL] Received segment {received_segment} from {external_addresss}")
+        window.set_ack(received_segment.header.ack_num)
+        self.stream.seq_num = window.get_current_seq_num()
+
+    def _send_segment(self, window: SlidingWindow):
+        sent_seq_num, segment = window.get_first_available_segment()
+        self.stream.send_segment(
+            segment, sent_seq_num, self.stream.ack_num, False, False)
+        window.set_sent(sent_seq_num, True)
+
+    def _send_ack(self, buffer_sorter: BufferSorter, received_segment):
+        self.stream.send_segment(
+            b'', self.stream.seq_num, received_segment.header.seq_num, False, False)
+        buffer_sorter.add_segment(
+            received_segment.header.seq_num, received_segment.data)
+        self.stream.ack_num = buffer_sorter.get_current_ack_num()
