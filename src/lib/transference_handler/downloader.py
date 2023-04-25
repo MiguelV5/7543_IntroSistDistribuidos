@@ -1,7 +1,7 @@
 
 import logging
-from lib.constant import SelectedTransferType
-from lib.file_handling import FileHandler
+from lib.utils.constant import SelectedTransferType
+from lib.utils.file_handling import FileHandler
 from lib.segment_encoding.application_header import ApplicationHeaderRDT
 
 
@@ -25,8 +25,7 @@ class Downloader():
                 f"[DOWNLOADER] Requested file does not exist: {app_header.file_name}"
             )
 
-        logging.info(
-            f"[DOWNLOADER] Application Header received")
+        logging.info("[DOWNLOADER] Application Header received")
 
         data = initial_data[ApplicationHeaderRDT.size():]
         data_size = len(data)

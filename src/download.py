@@ -1,7 +1,7 @@
 from lib.client import ClientRDT
-from lib.constant import SelectedProtocol
-from lib.log_setup import configure_logger
-from lib.parser import parse_download_args
+from lib.utils.constant import SelectedProtocol
+from lib.utils.log_setup import configure_logger
+from lib.utils.parser import parse_download_args
 
 
 if __name__ == "__main__":

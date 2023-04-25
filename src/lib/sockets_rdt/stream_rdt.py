@@ -1,8 +1,8 @@
 import logging
 import socket
 from typing import Tuple
-from lib.constant import DEFAULT_INITIATOR_SOCKET_READ_HANDSAKE_TIMEOUT, DEFAULT_LISTENER_SOCKET_READ_HANDSAKE_TIMEOUT, DEFAULT_SOCKET_READ_TIMEOUT,  SelectedProtocol
-from lib.exceptions import AssumeAlreadyConnectedError, ExternalConnectionClosed
+from lib.utils.constant import DEFAULT_INITIATOR_SOCKET_READ_HANDSAKE_TIMEOUT, DEFAULT_LISTENER_SOCKET_READ_HANDSAKE_TIMEOUT, DEFAULT_SOCKET_READ_TIMEOUT,  SelectedProtocol
+from lib.utils.exceptions import AssumeAlreadyConnectedError, ExternalConnectionClosed
 from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
 from lib.protocols.stop_and_wait import StopAndWait, SelectiveRepeat

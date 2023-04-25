@@ -1,14 +1,12 @@
 import logging
-import os
 from threading import Thread
-from lib.constant import DEFAULT_SV_STORAGE, DEFAULT_SOCKET_READ_TIMEOUT, SelectedProtocol, SelectedTransferType
-from lib.downloader import Downloader
-from lib.exceptions import ExternalConnectionClosed
-from lib.file_handling import FileHandler
+from lib.utils.constant import DEFAULT_SV_STORAGE, SelectedProtocol, SelectedTransferType
+from lib.transference_handler.downloader import Downloader
+from lib.utils.file_handling import FileHandler
 from lib.segment_encoding.application_header import ApplicationHeaderRDT
 
 from lib.sockets_rdt.listener_rdt import AccepterRDT, ListenerRDT
-from lib.uploader import Uploader
+from lib.transference_handler.uploader import Uploader
 
 
 class ServerRDT:

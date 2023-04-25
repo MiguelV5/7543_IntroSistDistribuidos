@@ -1,8 +1,6 @@
-
-
 import logging
 import socket
-from lib.constant import SelectedProtocol
+from lib.utils.constant import SelectedProtocol
 from lib.segment_encoding.application_header import ApplicationHeaderRDT
 
 from lib.segment_encoding.header_rdt import HeaderRDT

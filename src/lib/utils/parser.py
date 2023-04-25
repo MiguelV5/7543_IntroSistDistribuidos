@@ -1,7 +1,7 @@
 import argparse
-from lib.constant import (DEFAULT_DOWNLOAD_DST,
-                          DEFAULT_SV_STORAGE, LOCALHOST,
-                          DEFAULT_SV_PORT)
+from lib.utils.constant import (DEFAULT_DOWNLOAD_DST,
+                                DEFAULT_SV_STORAGE, LOCALHOST,
+                                DEFAULT_SV_PORT)
 
 # ====================== Pub functions ======================
 

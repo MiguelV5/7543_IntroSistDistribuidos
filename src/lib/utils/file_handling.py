@@ -1,7 +1,7 @@
 import logging
 import os
 
-from lib.exceptions import FileHandlerError
+from lib.utils.exceptions import FileHandlerError
 
 
 # Mainly an exception handler for whenever an error occurs at

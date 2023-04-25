@@ -1,8 +1,6 @@
-
-
 import logging
-from lib.constant import SelectedTransferType
-from lib.file_handling import FileHandler
+from lib.utils.constant import SelectedTransferType
+from lib.utils.file_handling import FileHandler
 from lib.segment_encoding.application_header import ApplicationHeaderRDT
 
 

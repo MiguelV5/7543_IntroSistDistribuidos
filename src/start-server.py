@@ -1,7 +1,7 @@
 import logging
-from lib.constant import SelectedProtocol
-from lib.log_setup import configure_logger
-from lib.parser import parse_server_args
+from lib.utils.constant import SelectedProtocol
+from lib.utils.log_setup import configure_logger
+from lib.utils.parser import parse_server_args
 from lib.server import ServerRDT
 
 
