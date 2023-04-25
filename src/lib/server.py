@@ -28,10 +28,11 @@ class ServerRDT:
             try:
                 accepter = listener.listen()
             except KeyboardInterrupt:
-                logging.debug("Keyboard interrupt received. Exiting...")
+                logging.debug(
+                    "[SERVER] Keyboard interrupt received. Exiting...")
                 break
             except Exception as e:
-                logging.error("Error listening: " + str(e))
+                logging.error("[SERVER] Error listening: " + str(e))
                 continue
 
             client_thread = Thread(target=self.server_port_handler,
@@ -41,10 +42,13 @@ class ServerRDT:
 
             for thread in self.server_ports_threads:
                 if not thread.is_alive():
+                    logging.debug("[SERVER] Removing dead thread")
                     self.server_ports_threads.remove(thread)
 
+        logging.debug("[SERVER] Waiting for threads to finish")
         for thread in self.server_ports_threads:
             thread.join()
+        logging.debug("[SERVER] ALl threads finished")
 
     def server_port_handler(
             self, accepter: AccepterRDT
@@ -61,29 +65,32 @@ class ServerRDT:
                 "[PORT HANDLER] Error starting connection: " + str(e))
             return
 
-        try:
-            self.handle_transference(stream, app_header, initial_data)
-        except Exception as e:
-            logging.error(
-                "[PORT HANDLER] Error handling transference: " + str(e))
-            stream.close()
-            return
+        self.handle_transference(stream, app_header, initial_data)
 
     def handle_transference(self, stream, app_header: ApplicationHeaderRDT, initial_data: bytes):
         file_name = app_header.file_name
         transfer_type = app_header.transfer_type
 
-        if transfer_type == SelectedTransferType.UPLOAD:
-            self.download(
-                stream, file_name, initial_data
-            )
-        elif transfer_type == SelectedTransferType.DOWNLOAD:
-            self.upload(stream, file_name)
+        try:
+            if transfer_type == SelectedTransferType.UPLOAD:
+                file_handler = FileHandler(
+                    DEFAULT_SV_STORAGE + file_name, file_name, "wb")
+                self.download(
+                    stream, file_handler, initial_data
+                )
+            elif transfer_type == SelectedTransferType.DOWNLOAD:
+                file_handler = FileHandler(
+                    DEFAULT_SV_STORAGE + file_name, file_name, "rb")
+                self.upload(stream, file_handler)
+        except Exception as e:
+            logging.error(
+                "[PORT HANDLER] Error handling transference: " + str(e))
+        finally:
+            file_handler.close()
+            stream.close()
+            return
 
-    def upload(self, stream, file_name):
-        file_handler = FileHandler(
-            DEFAULT_SV_STORAGE + file_name, file_name, "rb")
-
+    def upload(self, stream, file_handler):
         if FileHandler.file_exists(file_handler.get_file_path()) is False:
             app_header = ApplicationHeaderRDT(
                 self.NO_SUCH_FILE, SelectedTransferType.DOWNLOAD, 0)
@@ -95,8 +102,7 @@ class ServerRDT:
         uploader = Uploader(stream, file_handler)
         uploader.run()
 
-    def download(self, stream, file_name, start_of_user_data):
-        file = FileHandler(DEFAULT_SV_STORAGE + file_name, file_name, "wb")
+    def download(self, stream, file_handler, start_of_user_data):
 
-        downloader = Downloader(stream, file)
+        downloader = Downloader(stream, file_handler)
         downloader.run(start_of_user_data)

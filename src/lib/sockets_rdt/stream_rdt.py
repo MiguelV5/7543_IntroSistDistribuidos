@@ -1,8 +1,8 @@
 import logging
 import socket
 from typing import Tuple
-from lib.utils.constant import DEFAULT_INITIATOR_SOCKET_READ_HANDSAKE_TIMEOUT, DEFAULT_LISTENER_SOCKET_READ_HANDSAKE_TIMEOUT, DEFAULT_SOCKET_READ_TIMEOUT,  SelectedProtocol
-from lib.utils.exceptions import AssumeAlreadyConnectedError, ExternalConnectionClosed
+from lib.utils.constant import DEFAULT_INITIATOR_SOCKET_READ_CLOSE_TIMEOUT, DEFAULT_INITIATOR_SOCKET_READ_HANDSAKE_TIMEOUT, DEFAULT_LISTENER_SOCKET_READ_HANDSAKE_TIMEOUT, DEFAULT_RECEIVER_SOCKET_READ_CLOSE_TIMEOUT, DEFAULT_SOCKET_READ_TIMEOUT,  SelectedProtocol
+from lib.utils.exceptions import AssumeAlreadyConnectedError
 from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
 from lib.protocols.stop_and_wait import StopAndWait, SelectiveRepeat
@@ -18,7 +18,9 @@ class StreamRDT():
     MAX_LISTENER_HANDSHAKE_TIMEOUT_RETRIES = 8
 
     MAX_READ_TIMEOUT_RETRIES = 3
-    MAX_CLOSE_RETRIES = 5
+
+    MAX_INITIATOR_CLOSE_RETRIES = 6
+    MAX_RECEIVER_CLOSE_RETRIES = 4
 
     def __init__(self, selected_protocol, external_host, external_port,
                  seq_num, ack_num, host, port=None):
@@ -38,6 +40,8 @@ class StreamRDT():
 
         self.selected_protocol = selected_protocol
         self.protocol = self._select_protocol()
+
+        self.closing = False
 
     @classmethod
     def from_listener(
@@ -84,7 +88,14 @@ class StreamRDT():
         return self.protocol.read()
 
     def close(self):
-        # self.close_external_connection()
+        if (self.closing):
+            self.socket.close()
+            return
+        try:
+            self._run_close_as_initiator()
+        except Exception as e:
+            logging.error(
+                f"[CLOSE] Error while closing connection: {str(e)}")
         self.socket.close()
 
     # ======================== FOR PRIVATE USE ========================
@@ -142,12 +153,8 @@ class StreamRDT():
         if (expected_syn != segment.header.syn):
             raise ValueError(
                 "[READ SEGMENT] Invalid segment received: SYN flag set")
-
-        # CERRAR PROLIJAMENTE
-        if segment.header.fin:
-            # three/four way close
-            raise ExternalConnectionClosed(
-                "[READ SEGMENT] Connection closed by external host")
+        if not self.closing and segment.header.fin:
+            self._run_close_as_receiver()
 
         return segment, external_address
 
@@ -185,12 +192,9 @@ class StreamRDT():
         self.ack_num = segment.header.seq_num
 
         if self.seq_num != segment.header.ack_num:
-            logging.error(
-                f"seq_num: {self.seq_num} , ack_num: {segment.header.ack_num}")
             raise ValueError("[HANDSHAK READ] Invalid handshake")
         if not segment.header.syn:
-            logging.debug("[HANDSHAK READ] Invalid syn received" +
-                          str(segment.header.syn))
+            logging.debug("[HANDSHAK READ] Invalid syn received")
             raise AssumeAlreadyConnectedError
         return segment.header
 
@@ -257,26 +261,81 @@ class StreamRDT():
 
     # ---- Close related ----
 
-    # FALTA ARREGLAR
-    def close_external_connection(self):
+    def _send_close(self):
+        self.send_segment(b'', self.seq_num, self.ack_num, False, True)
+
+    def _read_close(self):
+        try:
+            segment, _ = self._base_read_segment(
+                True, False)
+        except TimeoutError:
+            raise TimeoutError(
+                "[CLOSE] Timeout while reading close")
+        if (self.closing and not segment.header.fin):
+            raise ValueError(
+                "[CLOSE] Invalid segment received: FIN flag not set")
+
+    def _initiatior_close_messages_exchange(self):
+        logging.debug("[CLOSE] INITIATOR 1 (send)")
+        self._send_close()
+
+        logging.debug("[CLOSE] INITIATOR 2 (read)")
+        self._read_close()
+
+        logging.debug("[CLOSE] INITIATOR 3 (send)")
+        self._send_close()
+
+    def _receiver_close_messages_exchange(self):
+        logging.debug("[CLOSE] INITIATOR 1 (send)")
+        self._send_close()
+
+        logging.debug("[CLOSE] INITIATOR 2 (read)")
+        self._read_close()
+
+    def _run_close_as_initiator(self):
+        self.closing = True
         logging.debug(
-            f"[CLOSE] Closing external connection with ({self.external_host}:{self.external_port})")
+            f"[CLOSE] Iniciating close with ({self.external_host}:{self.external_port})")
+
         retries = 0
-        while retries < self.MAX_CLOSE_RETRIES:
-            self.send_segment(b'', self.seq_num, self.ack_num, False, True)
+        while retries < self.MAX_INITIATOR_CLOSE_RETRIES:
             try:
-                segment, external_address = self._base_read_segment(
-                    True, False)
-                self._check_address(external_address)
-                if segment.header.fin:
-                    logging.debug("[CLOSE] External connection closed")
-                    break
-                else:
-                    retries += 1
-                    continue
+                self.settimeout(DEFAULT_INITIATOR_SOCKET_READ_CLOSE_TIMEOUT)
+                self._initiatior_close_messages_exchange()
+                logging.debug(
+                    f"[CLOSE] Connection closed with ({self.external_host}:{self.external_port})")
+                return
             except (TimeoutError, ValueError):
                 retries += 1
                 continue
-            except ExternalConnectionClosed:
-                logging.debug("[CLOSE] External connection closed")
-                break
+
+        logging.error("[CLOSE] Connection exhausted {} retries".format(
+            self.MAX_INITIATOR_CLOSE_RETRIES))
+        raise TimeoutError(
+            "[CLOSE] Connection not established after {} retries".format(
+                self.MAX_INITIATOR_CLOSE_RETRIES)
+        )
+
+    def _run_close_as_receiver(self):
+        self.closing = True
+        logging.debug(
+            f"[CLOSE] Receiving close with ({self.external_host}:{self.external_port})")
+
+        retries = 0
+        while retries < self.MAX_RECEIVER_CLOSE_RETRIES:
+            try:
+                self.settimeout(DEFAULT_RECEIVER_SOCKET_READ_CLOSE_TIMEOUT)
+                self._receiver_close_messages_exchange()
+                logging.debug(
+                    f"[CLOSE] Closed with ({self.external_host}:{self.external_port})")
+                return
+            except (TimeoutError, ValueError):
+                retries += 1
+                continue
+
+        logging.error("[CLOSE] Connection exhausted {} retries".format(
+            self.MAX_RECEIVER_CLOSE_RETRIES))
+        raise TimeoutError(
+            "[CLOSE] Connection not established after {} retries".format(
+                self.MAX_RECEIVER_CLOSE_RETRIES)
+        )

@@ -32,6 +32,9 @@ class ClientRDT:
         except Exception as e:
             logging.error("[CLIENT UPLOAD] Error uploading file: " + str(e))
             exit(1)
+        finally:
+            file_handler.close()
+            stream.close()
 
     def download(self, file_path, file_name):
         try:
@@ -52,3 +55,6 @@ class ClientRDT:
         except Exception as e:
             logging.error(
                 "[CLIENT DOWNLOAD] Error downloading file: " + str(e))
+        finally:
+            file.close()
+            stream.close()
