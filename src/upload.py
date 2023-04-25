@@ -1,8 +1,7 @@
-from lib.constant import SelectedProtocol
-from lib.log_setup import configure_logger
-from lib.parser import parse_upload_args
+from lib.utils.constant import SelectedProtocol
+from lib.utils.log_setup import configure_logger
+from lib.utils.parser import parse_upload_args
 from lib.client import ClientRDT
-import logging
 
 
 def main():
@@ -12,12 +11,7 @@ def main():
     protocol = SelectedProtocol.SELECTIVE_REPEAT if args.selective_repeat else SelectedProtocol.STOP_AND_WAIT
 
     client = ClientRDT(args.host, args.port, protocol)
-
-    try:
-        client.upload(args.name, args.src)
-    except Exception as e:
-        logging.error("Error uploading file: " + str(e))
-        exit(1)
+    client.upload(args.src, args.name)
 
 
 if __name__ == "__main__":

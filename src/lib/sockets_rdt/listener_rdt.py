@@ -1,8 +1,6 @@
-
-
 import logging
 import socket
-from lib.constant import SelectedProtocol
+from lib.utils.constant import SelectedProtocol
 from lib.segment_encoding.application_header import ApplicationHeaderRDT
 
 from lib.segment_encoding.header_rdt import HeaderRDT
@@ -48,8 +46,9 @@ class ListenerRDT():
                 logging.error("Invalid segment received: {}".format(e))
                 continue
 
+        logging.info(
+            "[HANDSHAKE] Conection attempt from {}".format(external_address))
         logging.debug("[HANDSHAKE] LISTENER 1 (read)")
-        logging.info("Conection attempt from {}".format(external_address))
 
         return AccepterRDT(self, segment, external_address)
 
@@ -71,7 +70,7 @@ class AccepterRDT():
             self.first_segment, self.host
         )
 
-        logging.info("Connection established with ({}:{})".format(
+        logging.info("[LISTENER] Connection established with ({}:{})".format(
             self.external_host, self.external_port)
         )
 

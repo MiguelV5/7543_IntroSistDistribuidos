@@ -5,8 +5,8 @@ class SegmentRDT:
     MAX_DATA_SIZE = 1024
 
     def __repr__(self):
-        return "SegmentRDT(header={}, data={})".format(
-            self.header, self.data)
+        return "SegmentRDT(header={}, data_size={})".format(
+            self.header, len(self.data))
 
     def __str__(self):
         return self.__repr__()
@@ -30,14 +30,10 @@ class SegmentRDT:
         header_size = HeaderRDT.size()
 
         if len(data) < header_size:
-            raise ValueError("Received data size is less than header size")
+            raise ValueError(
+                "[SEGMENT] Received data size is less than header size")
 
         header = HeaderRDT.from_bytes(data[:header_size])
         data = data[header_size:]
 
-        # TODO check if data size is correct according with header info
-
         return cls(header, data)
-
-
-segment = SegmentRDT

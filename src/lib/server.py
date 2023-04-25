@@ -1,12 +1,12 @@
 import logging
-import os
 from threading import Thread
-from lib.constant import DEFAULT_SV_STORAGE, DEFAULT_SOCKET_READ_TIMEOUT, SelectedProtocol, SelectedTransferType
-from lib.exceptions import ExternalConnectionClosed
-from lib.file_handling import FileHandler
+from lib.utils.constant import DEFAULT_SV_STORAGE, SelectedProtocol, SelectedTransferType
+from lib.transference_handler.downloader import Downloader
+from lib.utils.file_handling import FileHandler
 from lib.segment_encoding.application_header import ApplicationHeaderRDT
 
 from lib.sockets_rdt.listener_rdt import AccepterRDT, ListenerRDT
+from lib.transference_handler.uploader import Uploader
 
 
 class ServerRDT:
@@ -18,169 +18,113 @@ class ServerRDT:
         self.host = host
         self.port = port
         self.protocol = protocol
-        self.client_threads = []
+        self.server_ports_threads = []
 
     def run(self):
-
+        logging.info("[SERVER] Starting server")
         listener = ListenerRDT(self.host, self.port, self.protocol)
 
+        logging.info("[SERVER] Listening for connections")
         while True:
             try:
                 accepter = listener.listen()
             except KeyboardInterrupt:
-                logging.debug("Keyboard interrupt received. Exiting...")
+                logging.debug(
+                    "[SERVER] Keyboard interrupt received, closing server")
                 break
             except Exception as e:
-                logging.error("Error listening: " + str(e))
+                logging.error("[SERVER] Error listening: " + str(e))
                 continue
 
-            client_thread = Thread(target=self.individual_connection_handler,
+            client_thread = Thread(target=self.server_port_handler,
                                    args=(accepter,))
-            self.client_threads.append(client_thread)
-            logging.debug(">>>>>>>>>>>>>> NEW THREAD CREATED <<<<<<<<<<<<<<<<")
+            self.server_ports_threads.append(client_thread)
             client_thread.start()
 
-            for thread in self.client_threads:
+            for thread in self.server_ports_threads:
                 if not thread.is_alive():
-                    self.client_threads.remove(thread)
+                    logging.info("[SERVER] Removing dead thread")
+                    self.server_ports_threads.remove(thread)
 
-        logging.debug("joining threads")
-        for thread in self.client_threads:
+        logging.info("[SERVER] Waiting for threads to finish")
+        for thread in self.server_ports_threads:
             thread.join()
+        logging.info("[SERVER] ALl threads finished")
 
-    def individual_connection_handler(
+    def server_port_handler(
             self, accepter: AccepterRDT
     ):
         try:
+            logging.info(
+                f"[PORT HANDLER] Accepting connection from client {accepter.external_host}:{accepter.external_port}")
             stream = accepter.accept()
-        except Exception as e:
-            logging.error("Error accepting connection: " + str(e))
-            return
 
-        try:
             initial_data = stream.read()
+
             app_header_bytes = initial_data[:ApplicationHeaderRDT.size()]
             app_header = ApplicationHeaderRDT.from_bytes(app_header_bytes)
+            logging.info(
+                f"[PORT HANDLER] Reading Applicaton Header: {app_header}")
         except Exception as e:
-            logging.error("Error reading application header: " + str(e))
-            stream.close()
+            logging.error(
+                "[PORT HANDLER] Error starting connection: " + str(e))
             return
 
+        self.handle_transference(stream, app_header, initial_data)
+
+    def handle_transference(self, stream, app_header: ApplicationHeaderRDT, initial_data: bytes):
         file_name = app_header.file_name
         transfer_type = app_header.transfer_type
-
-        logging.info("Received application header: {}".format(str(app_header)))
-
+        file_handler = None
         try:
-            self.handle_transfer_by_type(stream, transfer_type,
-                                         file_name, initial_data, app_header)
+            if transfer_type == SelectedTransferType.UPLOAD:
+                logging.info(
+                    "[PORT HANDLER] Transference type: UPLOAD")
+                logging.info("[PORT HANDLER] Opening file to download")
+                file_handler = FileHandler(
+                    DEFAULT_SV_STORAGE + file_name, file_name, "wb")
+                self.download(
+                    stream, file_handler, initial_data
+                )
+            elif transfer_type == SelectedTransferType.DOWNLOAD:
+                logging.info(
+                    "[PORT HANDLER] Transference type: DOWNLOAD")
+                logging.info(
+                    "[PORT HANDLER] Checking file existence")
+                self._check_if_file_exist(file_name, stream)
+
+                logging.info(
+                    "[PORT HANDLER] Checking file existence")
+
+                logging.info("[PORT HANDLER] Opening file to upload")
+                file_handler = FileHandler(
+                    DEFAULT_SV_STORAGE + file_name, file_name, "rb")
+                self.upload(stream, file_handler)
         except Exception as e:
-            logging.error("Error handling transference: " + str(e))
-            stream.close()
+            logging.error(
+                "[PORT HANDLER] Error handling transference: " + str(e))
+        finally:
+            if (file_handler):
+                file_handler.close()
+            if (stream):
+                stream.close()
+
+    def upload(self, stream, file_handler):
+        uploader = Uploader(stream, file_handler)
+        uploader.run()
+
+    def download(self, stream, file_handler, start_of_user_data):
+        downloader = Downloader(stream, file_handler)
+        downloader.run(start_of_user_data)
+
+    def _check_if_file_exist(self, file_name, stream):
+        if FileHandler.file_exists(DEFAULT_SV_STORAGE + file_name):
             return
-
-    def handle_transfer_by_type(self, stream, transfer_type, file_name, initial_data, app_header):
-        if transfer_type == SelectedTransferType.UPLOAD:
-            if len(initial_data) > ApplicationHeaderRDT.size():
-                start_of_user_data = initial_data[ApplicationHeaderRDT.size():]
-            else:
-                start_of_user_data = b""
-            remaining_file_size = app_header.file_size - \
-                len(start_of_user_data)
-            self.handle_upload_request(
-                stream, file_name, remaining_file_size, start_of_user_data
-            )
-        elif transfer_type == SelectedTransferType.DOWNLOAD:
-            self.handle_download_request(stream, file_name)
-
-    def handle_download_request(self, stream, file_name):
-
-        file_path = DEFAULT_SV_STORAGE + file_name
-
-        if FileHandler.file_exists(file_path) is False:
-            logging.info(
-                f"The file: {file_name}  requested to download from client: ({stream.external_host}:{stream.external_port}) doesn't exists"
-            )
-            app_header = ApplicationHeaderRDT(
-                self.NO_SUCH_FILE, SelectedTransferType.DOWNLOAD, 0)
-            try:
-                stream.send(app_header.as_bytes())
-            except Exception:
-                pass
-            stream.close()
-            return
-
-        file = FileHandler(file_path, "rb")
 
         app_header = ApplicationHeaderRDT(
-            SelectedTransferType.DOWNLOAD, file_name, file.size())
-        try:
-            print(">>>>>>> sending app header: {}".format(str(app_header)))
-            stream.send(app_header.as_bytes())
-            logging.info(
-                f"Successfully sent application header of file: {file_name} to client: ({stream.external_host}:{stream.external_port})")
-        except Exception as e:
-            print(">>>>>>> error sending app header: {}".format(str(e)))
-            file.close()
-            stream.close()
-            return
+            SelectedTransferType.DOWNLOAD, self.NO_SUCH_FILE, 0)
+        stream.send(app_header.as_bytes())
 
-        chunk_size = FileHandler.MAX_READ_SIZE
-
-        file_size = file.size()
-
-        for _ in range(0, file_size, chunk_size):
-            try:
-                data = file.read(chunk_size)
-                stream.send(data)
-            except Exception:
-                stream.close()
-                file.close()
-                return
-
-        file.close()
-        logging.info(f"Successfully sent file: {file_name}")
-
-        stream.close()
-
-    def handle_upload_request(self, stream, file_name, remaining_file_size, start_of_user_data):
-        file_path = DEFAULT_SV_STORAGE + file_name
-        file = FileHandler(file_path, "wb")
-
-        if file.size() > self.MAX_FILE_SIZE_ALLOWED:
-            logging.error(
-                f"The file: {file_name}  requested to upload from client: ({stream.external_host}:{stream.external_port}) exceeds the maximum file size allowed"
-            )
-            file.close()
-            return
-
-        try:
-            if (len(start_of_user_data) > 0):
-                file.write(start_of_user_data)
-        except Exception as e:
-            file.close()
-            raise e
-
-        while remaining_file_size > 0:
-            try:
-                new_data = stream.read()
-                file.write(new_data)
-                remaining_file_size -= len(new_data)
-            except ExternalConnectionClosed:
-                break
-            except Exception as e:
-                file.close()
-                raise e
-
-        # if remaining_file_size > 0:
-        #     logging.error(
-        #         f"Client: ({stream.external_host}:{stream.external_port}) closed the connection before sending the entire file"
-        #     )
-        #     file.close()
-        #     # delete the written file with the os library
-        #     os.remove(file_path)
-        #     stream.close()
-        #     return
-
-        file.close()
-        logging.info(f"Successfully received file: {file_name}")
+        logging.error(
+            f"[SERVER UPLOAD] Sending App Header, file does not exist: {app_header}")
+        raise ValueError("[SERVER UPLOAD] File doesn't exists")

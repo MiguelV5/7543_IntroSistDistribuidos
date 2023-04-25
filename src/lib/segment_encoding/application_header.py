@@ -2,7 +2,7 @@
 import ctypes
 import struct
 
-from lib.constant import SelectedTransferType
+from lib.utils.constant import SelectedTransferType
 from crc import Calculator, Crc8
 
 
