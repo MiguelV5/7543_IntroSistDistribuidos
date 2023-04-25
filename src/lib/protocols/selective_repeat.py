@@ -5,6 +5,12 @@ from lib.exceptions import ExternalConnectionClosed
 
 class SlidingWindow:
 
+    def __repr__(self):
+        return f"SlidingWindow(current_seq_num={self.current_seq_num}, final_seq_num={self.final_seq_num}, ack_list={self.ack_list}, sent_list={self.sent_list})"
+
+    def __str__(self):
+        return self.__repr__()
+
     def __init__(self, data, window_size, initial_seq_num=0):
         self.window_size = window_size
         self.data = data
@@ -14,13 +20,13 @@ class SlidingWindow:
         self.ack_list = [False for _ in range(self.window_size)]
         self.sent_list = [False for _ in range(self.window_size)]
 
-    def get_ack(self, seq_num):
-        return self.ack_list[seq_num - self.current_seq_num]
+    def get_ack(self, received_ack):
+        return self.ack_list[received_ack - self.current_seq_num]
 
-    def set_ack(self, seq_num):
-        if (seq_num < self.current_seq_num or seq_num > self.final_seq_num):
+    def set_ack(self, received_ack):
+        if (received_ack < self.current_seq_num or received_ack > self.final_seq_num):
             return
-        self.ack_list[seq_num - self.current_seq_num] = True
+        self.ack_list[received_ack - self.current_seq_num] = True
         self.update_sliding_window()
 
     def update_sliding_window(self):
@@ -100,14 +106,14 @@ class BufferSorter:
         self.curr_ack_num = initial_ack_num
         self.buffer = []
 
-    def add_segment(self, ext_seq_num, data):
-        seg_position = ext_seq_num - self.curr_ack_num
+    def add_segment(self, received_seq_num, data):
+        seg_position = received_seq_num - self.curr_ack_num
         if seg_position < 0:
             return
         if seg_position >= len(self.buffer):
             for i in range(seg_position - len(self.buffer) + 1):
                 self.buffer.append((len(self.buffer) + i, None))
-        self.buffer[seg_position] = (ext_seq_num, data)
+        self.buffer[seg_position] = (received_seq_num, data)
 
     def pop_available_data(self):
         data_popped = b''
@@ -189,15 +195,13 @@ class SelectiveRepeat:
                 try:
                     received_segment, external_addres = self.stream.read_segment(
                         True)
-
-                    received_seq_num = received_segment.header.seq_num
-                    received_segment_data = received_segment.data
-                    received_ack_num = received_segment.header.ack_num
-                    logging.info(
-                        f"[PROTOCOL] Received segment {external_addres} seq_num: {received_seq_num} | ack_num: {received_ack_num} | syn: {received_segment.header.syn} | fin: {received_segment.header.fin}")
-                    window.set_ack(received_ack_num)
+                    window.set_ack(received_segment.header.ack_num)
                     self.stream.seq_num = window.get_current_seq_num()
                     retries = 0
+
+                    logging.info(
+                        f"[PROTOCOL] Received segment {segment} from {external_addres}")
+
                     continue
                 except TimeoutError:
                     window.reset_sent_segments()

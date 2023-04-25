@@ -83,31 +83,8 @@ class StreamRDT():
     def read(self) -> bytes:
         return self.protocol.read()
 
-    def close_external_connection(self):
-        logging.debug(
-            f"[CLOSE] Closing external connection with ({self.external_host}:{self.external_port})")
-        retries = 0
-        while retries < self.MAX_CLOSE_RETRIES:
-            self.send_segment(b'', self.seq_num, self.ack_num, False, True)
-            try:
-                segment, external_address = self._base_read_segment(
-                    True, False)
-                self._check_address(external_address)
-                if segment.header.fin:
-                    logging.debug("[CLOSE] External connection closed")
-                    break
-                else:
-                    retries += 1
-                    continue
-            except (TimeoutError, ValueError):
-                retries += 1
-                continue
-            except ExternalConnectionClosed:
-                logging.debug("[CLOSE] External connection closed")
-                break
-
     def close(self):
-        self.close_external_connection()
+        # self.close_external_connection()
         self.socket.close()
 
     # ======================== FOR PRIVATE USE ========================
@@ -131,15 +108,14 @@ class StreamRDT():
         return self._base_read_segment(check_address, False)
 
     def read_segment_non_blocking(self, check_address) -> Tuple[SegmentRDT, tuple]:
+        self.settimeout(0)
         try:
-            self.settimeout(0)
-            segment, external_address = self._base_read_segment(
+            result = self._base_read_segment(
                 check_address, True)
-            self.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
-            return segment, external_address
         except Exception:
-            self.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
-            return None, None
+            result = (None, None)
+        self.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
+        return result
 
     def _base_read_segment(self, check_address, expected_syn) -> Tuple[SegmentRDT, tuple]:
         try:
@@ -148,28 +124,31 @@ class StreamRDT():
             logging.debug("[READ SEGMENT] Received data from {}:{} ->  {}:{}".format(
                 external_address[0], external_address[1], self.host, self.port)
             )
-            if (check_address):
-                self._check_address(external_address)
-            segment = SegmentRDT.from_bytes(segment_as_bytes)
-
         except socket.timeout:
             raise TimeoutError("[READ SEGMENT] Timeout while reading")
-        except ValueError as e:
+        except Exception as e:
             raise ValueError(
-                "[READ SEGMENT] Invalid segment received:  " + str(e))
+                "[READ SEGMENT] Error while reading: " + str(e))
+
+        if (check_address):
+            self._check_address(external_address)
+
+        segment = SegmentRDT.from_bytes(segment_as_bytes)
 
         if (expected_syn != segment.header.syn):
             raise ValueError(
                 "[READ SEGMENT] Invalid segment received: SYN flag set")
+
+        # CERRAR PROLIJAMENTE
         if segment.header.fin:
-            logging.debug(
-                "[READ SEGMENT] Received fin segment, must close connection")
+            # three/four way close
             raise ExternalConnectionClosed(
                 "[READ SEGMENT] Connection closed by external host")
 
         return segment, external_address
 
     def send_segment(self, data: bytes, seq_num, ack_num, syn, fin):
+
         logging.debug("Sending data from {}:{} ->  {}:{}".format(
             self.host, self.port, self.external_host, self.external_port))
 
@@ -198,6 +177,7 @@ class StreamRDT():
         self.external_host = external_address[0]
         self.external_port = external_address[1]
         self.ack_num = segment.header.seq_num
+
         if self.seq_num != segment.header.ack_num:
             logging.error(
                 f"seq_num: {self.seq_num} , ack_num: {segment.header.ack_num}")
@@ -206,10 +186,6 @@ class StreamRDT():
             logging.debug("[HANDSHAK READ] Invalid syn received" +
                           str(segment.header.syn))
             raise AssumeAlreadyConnectedError
-        if segment.header.fin:
-            logging.error("[HANDSHAK READ] fin: " + str(segment.header.fin))
-            raise ValueError("[HANDSHAK READ] Invalid handshake")
-
         return segment.header
 
     def _initiatior_handshake_messages_exchange(self):
@@ -234,7 +210,6 @@ class StreamRDT():
             logging.debug("[HANDSHAKE] Already connected")
 
         logging.debug("[HANDSHAKE] LISTENER 3 (read)")
-        self.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
 
     def _run_handshake_as_initiator(self):
 
@@ -246,9 +221,7 @@ class StreamRDT():
                 self._initiatior_handshake_messages_exchange()
                 self.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
                 return
-            except TimeoutError:
-                retries += 1
-            except ValueError:
+            except (ValueError, TimeoutError):
                 retries += 1
 
         logging.error("Connection exhausted {} retries".format(
@@ -268,9 +241,7 @@ class StreamRDT():
                 self._listener_handshake_messages_exchange()
                 self.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
                 return
-            except TimeoutError:
-                retries += 1
-            except ValueError:
+            except (ValueError, TimeoutError):
                 retries += 1
 
         logging.error("Connection exhausted {} retries".format(
@@ -279,3 +250,29 @@ class StreamRDT():
             "Connection not established after {} retries".format(
                 self.MAX_LISTENER_HANDSHAKE_TIMEOUT_RETRIES)
         )
+
+    # ---- Close related ----
+
+    # FALTA ARREGLAR
+    def close_external_connection(self):
+        logging.debug(
+            f"[CLOSE] Closing external connection with ({self.external_host}:{self.external_port})")
+        retries = 0
+        while retries < self.MAX_CLOSE_RETRIES:
+            self.send_segment(b'', self.seq_num, self.ack_num, False, True)
+            try:
+                segment, external_address = self._base_read_segment(
+                    True, False)
+                self._check_address(external_address)
+                if segment.header.fin:
+                    logging.debug("[CLOSE] External connection closed")
+                    break
+                else:
+                    retries += 1
+                    continue
+            except (TimeoutError, ValueError):
+                retries += 1
+                continue
+            except ExternalConnectionClosed:
+                logging.debug("[CLOSE] External connection closed")
+                break
