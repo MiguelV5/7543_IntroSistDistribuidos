@@ -5,8 +5,6 @@ from lib.exceptions import ExternalConnectionClosed
 
 class SlidingWindow:
 
-    MAX_TIMEOUT_RETRIES = 3
-
     def __init__(self, data, window_size, initial_seq_num=0):
         self.window_size = window_size
         self.data = data
@@ -86,28 +84,30 @@ class SlidingWindow:
             i += 1
         return None, None
 
+    def get_current_seq_num(self):
+        return self.current_seq_num
+
 
 class BufferSorter:
 
     def __repr__(self):
-        return f'BufferSorter(curr_seq_num={self.curr_seq_num}, buffer={self.buffer})'
+        return f'BufferSorter(curr_seq_num={self.curr_ack_num}, buffer={self.buffer})'
 
     def __str__(self):
         return self.__repr__()
 
-    def __init__(self, initial_seq_num=0):
-        self.curr_seq_num = initial_seq_num
+    def __init__(self, initial_ack_num=0):
+        self.curr_ack_num = initial_ack_num
         self.buffer = []
 
-    def add_segment(self, seq_num, data):
-        seg_position = seq_num - self.curr_seq_num
+    def add_segment(self, ext_seq_num, data):
+        seg_position = ext_seq_num - self.curr_ack_num
         if seg_position < 0:
             return
         if seg_position >= len(self.buffer):
             for i in range(seg_position - len(self.buffer) + 1):
                 self.buffer.append((len(self.buffer) + i, None))
-
-        self.buffer[seg_position] = (seq_num, data)
+        self.buffer[seg_position] = (ext_seq_num, data)
 
     def pop_available_data(self):
         data_popped = b''
@@ -120,16 +120,21 @@ class BufferSorter:
         if (self._has_available_segment_to_pop() is False):
             return None
         seq_num, data = self.buffer.pop(0)
-        self.curr_seq_num = seq_num + 1
+        self.curr_ack_num = seq_num + 1
         return data
 
     def _has_available_segment_to_pop(self):
         return len(self.buffer) != 0 and \
-            (self.buffer[0][0] == self.curr_seq_num) and \
+            (self.buffer[0][0] == self.curr_ack_num) and \
             (self.buffer[0][1] is not None)
+
+    def get_current_ack_num(self):
+        return self.curr_ack_num
 
 
 class SelectiveRepeat:
+
+    MAX_TIMEOUT_RETRIES = 5
 
     def __init__(self, stream, window_size, mss: int):
         self.stream = stream
@@ -141,22 +146,14 @@ class SelectiveRepeat:
         buf_sorter = BufferSorter(self.stream.ack_num)
 
         retries = 0
-        while retries < SlidingWindow.MAX_TIMEOUT_RETRIES:
+        while retries < SelectiveRepeat.MAX_TIMEOUT_RETRIES:
             try:
                 # Reading segment
-                received_segment, external_addres = self.stream.read_segment(
+                received_segment, _ = self.stream.read_segment(
                     True)
             except Exception:
                 retries += 1
                 continue
-            if received_segment.header.syn:
-                logging.debug("[PROTOCOL] Received outdated handshake segment")
-                continue
-            if received_segment.header.fin:
-                logging.debug(
-                    "[PROTOCOL] Received fin segment, must close connection")
-                raise ExternalConnectionClosed(
-                    "Connection closed by external host")
 
             received_seq_num = received_segment.header.seq_num
             # received_ack_num = received_segment.header.ack_num
@@ -175,10 +172,11 @@ class SelectiveRepeat:
             logging.debug(f">>>>>> [PROTOCOL] buffsorter: {buf_sorter}")
 
             read_data = buf_sorter.pop_available_data()
+            self.stream.ack_num = buf_sorter.get_current_ack_num()
 
             return read_data
 
-        if retries == SlidingWindow.MAX_TIMEOUT_RETRIES:
+        if retries == SelectiveRepeat.MAX_TIMEOUT_RETRIES:
             raise TimeoutError("Multiple timeouts while tryng to read data")
 
     def send(self, data_segments):
@@ -186,16 +184,11 @@ class SelectiveRepeat:
             data_segments, self.window_size, self.stream.seq_num)
 
         retries = 0
-        while not window.finished() and retries < SlidingWindow.MAX_TIMEOUT_RETRIES:
+        while not window.finished() and retries < SelectiveRepeat.MAX_TIMEOUT_RETRIES:
             if not window.has_available_segments_to_send():
                 try:
                     received_segment, external_addres = self.stream.read_segment(
                         True)
-                    if received_segment.header.fin:
-                        logging.debug(
-                            "[PROTOCOL] Received fin segment, must close connection")
-                        raise ExternalConnectionClosed(
-                            "Connection closed by external host")
 
                     received_seq_num = received_segment.header.seq_num
                     received_segment_data = received_segment.data
@@ -203,6 +196,7 @@ class SelectiveRepeat:
                     logging.info(
                         f"[PROTOCOL] Received segment {external_addres} seq_num: {received_seq_num} | ack_num: {received_ack_num} | syn: {received_segment.header.syn} | fin: {received_segment.header.fin}")
                     window.set_ack(received_ack_num)
+                    self.stream.seq_num = window.get_current_seq_num()
                     retries = 0
                     continue
                 except TimeoutError:
@@ -231,9 +225,10 @@ class SelectiveRepeat:
             logging.info(
                 f"[PROTOCOL] Received segment {external_addres} seq_num: {received_seq_num} | data: {received_segment_data} | ack_num: {received_ack_num} | syn: False | fin: False")
             window.set_ack(received_ack_num)
+            self.stream.seq_num = window.get_current_seq_num()
             retries = 0
 
-        if retries >= SlidingWindow.MAX_TIMEOUT_RETRIES:
+        if retries >= SelectiveRepeat.MAX_TIMEOUT_RETRIES:
             raise TimeoutError(
-                "Multiple timeouts while tryng to send data and receive corresponding acks"
+                "[PROTOCOL] Multiple timeouts while tryng to send data and receive corresponding acks"
             )

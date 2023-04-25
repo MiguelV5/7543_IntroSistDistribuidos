@@ -1,8 +1,8 @@
 import logging
 import socket
 from typing import Tuple
-from lib.constant import DEFAULT_SOCKET_RECV_TIMEOUT,  SelectedProtocol
-from lib.exceptions import AssumeAlreadyConnectedError
+from lib.constant import DEFAULT_INITIATOR_SOCKET_READ_HANDSAKE_TIMEOUT, DEFAULT_LISTENER_SOCKET_READ_HANDSAKE_TIMEOUT, DEFAULT_SOCKET_READ_TIMEOUT,  SelectedProtocol
+from lib.exceptions import AssumeAlreadyConnectedError, ExternalConnectionClosed
 from lib.segment_encoding.header_rdt import HeaderRDT
 from lib.segment_encoding.segment_rdt import SegmentRDT
 from lib.protocols.stop_and_wait import StopAndWait, SelectiveRepeat
@@ -14,7 +14,9 @@ class StreamRDT():
     START_LISTENER_SEQ = 1000
     START_CONNECT_SEQ = 2000
 
-    MAX_HANDSHAKE_TIMEOUT_RETRIES = 8
+    MAX_INITIATOR_HANDSHAKE_TIMEOUT_RETRIES = 4
+    MAX_LISTENER_HANDSHAKE_TIMEOUT_RETRIES = 8
+
     MAX_READ_TIMEOUT_RETRIES = 3
     MAX_CLOSE_RETRIES = 5
 
@@ -26,7 +28,7 @@ class StreamRDT():
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(('', 0 if port is None else port))
-        self.socket.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
+        self.socket.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
 
         self.host = host
         self.port = self.socket.getsockname()[1]
@@ -83,15 +85,16 @@ class StreamRDT():
 
     def close_external_connection(self):
         logging.debug(
-            f"Closing external connection with ({self.external_host}:{self.external_port})")
+            f"[CLOSE] Closing external connection with ({self.external_host}:{self.external_port})")
         retries = 0
         while retries < self.MAX_CLOSE_RETRIES:
             self.send_segment(b'', self.seq_num, self.ack_num, False, True)
             try:
-                segment, external_address = self.read_segment(True)
+                segment, external_address = self._base_read_segment(
+                    True, False)
                 self._check_address(external_address)
                 if segment.header.fin:
-                    logging.debug("External connection closed")
+                    logging.debug("[CLOSE] External connection closed")
                     break
                 else:
                     retries += 1
@@ -99,6 +102,9 @@ class StreamRDT():
             except (TimeoutError, ValueError):
                 retries += 1
                 continue
+            except ExternalConnectionClosed:
+                logging.debug("[CLOSE] External connection closed")
+                break
 
     def close(self):
         self.close_external_connection()
@@ -122,6 +128,20 @@ class StreamRDT():
             raise ValueError("Invalid external_port")
 
     def read_segment(self, check_address) -> Tuple[SegmentRDT, tuple]:
+        return self._base_read_segment(check_address, False)
+
+    def read_segment_non_blocking(self, check_address) -> Tuple[SegmentRDT, tuple]:
+        try:
+            self.settimeout(0)
+            segment, external_address = self._base_read_segment(
+                check_address, True)
+            self.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
+            return segment, external_address
+        except Exception:
+            self.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
+            return None, None
+
+    def _base_read_segment(self, check_address, expected_syn) -> Tuple[SegmentRDT, tuple]:
         try:
             segment_as_bytes, external_address = self.socket.recvfrom(
                 SegmentRDT.MAX_DATA_SIZE + HeaderRDT.size())
@@ -131,27 +151,23 @@ class StreamRDT():
             if (check_address):
                 self._check_address(external_address)
             segment = SegmentRDT.from_bytes(segment_as_bytes)
-            return segment, external_address
-        except socket.timeout:
-            # logging.debug("Timeout while reading")
-            raise TimeoutError("Timeout while reading")
-        except ValueError as e:
-            logging.debug("Invalid segment received:  " + str(e))
-            raise ValueError("Invalid segment received:  " + str(e))
 
-    def read_segment_non_blocking(self, check_address) -> Tuple[SegmentRDT, tuple]:
-        try:
-            self.socket.settimeout(0)
-            segment_as_bytes, external_address = self.socket.recvfrom(
-                SegmentRDT.MAX_DATA_SIZE + HeaderRDT.size())
-            segment = SegmentRDT.from_bytes(segment_as_bytes)
-            if (check_address):
-                self._check_address(external_address)
-            self.socket.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
-            return segment, external_address
-        except Exception:
-            self.socket.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
-            return None, None
+        except socket.timeout:
+            raise TimeoutError("[READ SEGMENT] Timeout while reading")
+        except ValueError as e:
+            raise ValueError(
+                "[READ SEGMENT] Invalid segment received:  " + str(e))
+
+        if (expected_syn != segment.header.syn):
+            raise ValueError(
+                "[READ SEGMENT] Invalid segment received: SYN flag set")
+        if segment.header.fin:
+            logging.debug(
+                "[READ SEGMENT] Received fin segment, must close connection")
+            raise ExternalConnectionClosed(
+                "[READ SEGMENT] Connection closed by external host")
+
+        return segment, external_address
 
     def send_segment(self, data: bytes, seq_num, ack_num, syn, fin):
         logging.debug("Sending data from {}:{} ->  {}:{}".format(
@@ -173,7 +189,8 @@ class StreamRDT():
 
     def _read_handshake(self):
         try:
-            segment, external_address = self.read_segment(False)
+            segment, external_address = self._base_read_segment(
+                False, True)
         except TimeoutError:
             raise TimeoutError(
                 "[HANDSHAK READ] Timeout while reading handshake")
@@ -217,14 +234,17 @@ class StreamRDT():
             logging.debug("[HANDSHAKE] Already connected")
 
         logging.debug("[HANDSHAKE] LISTENER 3 (read)")
+        self.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
 
     def _run_handshake_as_initiator(self):
 
         # Start message exchange
         retries = 0
-        while retries < self.MAX_HANDSHAKE_TIMEOUT_RETRIES:
+        while retries < self.MAX_INITIATOR_HANDSHAKE_TIMEOUT_RETRIES:
             try:
+                self.settimeout(DEFAULT_INITIATOR_SOCKET_READ_HANDSAKE_TIMEOUT)
                 self._initiatior_handshake_messages_exchange()
+                self.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
                 return
             except TimeoutError:
                 retries += 1
@@ -232,19 +252,21 @@ class StreamRDT():
                 retries += 1
 
         logging.error("Connection exhausted {} retries".format(
-            self.MAX_HANDSHAKE_TIMEOUT_RETRIES))
+            self.MAX_INITIATOR_HANDSHAKE_TIMEOUT_RETRIES))
         raise TimeoutError(
             "Connection not established after {} retries".format(
-                self.MAX_HANDSHAKE_TIMEOUT_RETRIES)
+                self.MAX_INITIATOR_HANDSHAKE_TIMEOUT_RETRIES)
         )
 
     def _run_handshake_as_listener(
             self
     ):
         retries = 0
-        while retries < self.MAX_HANDSHAKE_TIMEOUT_RETRIES:
+        while retries < self.MAX_LISTENER_HANDSHAKE_TIMEOUT_RETRIES:
             try:
+                self.settimeout(DEFAULT_LISTENER_SOCKET_READ_HANDSAKE_TIMEOUT)
                 self._listener_handshake_messages_exchange()
+                self.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
                 return
             except TimeoutError:
                 retries += 1
@@ -252,8 +274,8 @@ class StreamRDT():
                 retries += 1
 
         logging.error("Connection exhausted {} retries".format(
-            self.MAX_HANDSHAKE_TIMEOUT_RETRIES))
+            self.MAX_LISTENER_HANDSHAKE_TIMEOUT_RETRIES))
         raise TimeoutError(
             "Connection not established after {} retries".format(
-                self.MAX_HANDSHAKE_TIMEOUT_RETRIES)
+                self.MAX_LISTENER_HANDSHAKE_TIMEOUT_RETRIES)
         )

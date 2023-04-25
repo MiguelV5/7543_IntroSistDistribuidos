@@ -1,6 +1,6 @@
 import logging
 import os
-from lib.constant import DEFAULT_SOCKET_RECV_TIMEOUT, SelectedProtocol, SelectedTransferType
+from lib.constant import DEFAULT_SOCKET_READ_TIMEOUT, SelectedProtocol, SelectedTransferType
 from lib.exceptions import ExternalConnectionClosed
 from lib.file_handling import FileHandler
 from lib.segment_encoding.application_header import ApplicationHeaderRDT
@@ -37,7 +37,7 @@ class ClientRDT:
         logging.info("[UPLOAD] Client connected to: {}:{}".format(
             stream.external_host, stream.external_port))
 
-        stream.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
+        stream.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
 
         file = FileHandler(file_src_path, "rb")
         app_header = ApplicationHeaderRDT(
@@ -86,7 +86,7 @@ class ClientRDT:
         logging.info("[DOWNLOAD] Client connected to: {}:{}".format(
             stream.external_host, stream.external_port))
 
-        stream.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
+        stream.settimeout(DEFAULT_SOCKET_READ_TIMEOUT)
 
         file = FileHandler(file_dst_path, "wb")
 

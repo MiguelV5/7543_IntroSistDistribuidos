@@ -1,5 +1,5 @@
-sv_storage/
-downloads/
+# sv_storage/
+# downloads/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

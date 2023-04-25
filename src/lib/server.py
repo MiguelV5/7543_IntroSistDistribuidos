@@ -1,7 +1,7 @@
 import logging
 import os
 from threading import Thread
-from lib.constant import DEFAULT_SV_STORAGE, DEFAULT_SOCKET_RECV_TIMEOUT, SelectedProtocol, SelectedTransferType
+from lib.constant import DEFAULT_SV_STORAGE, DEFAULT_SOCKET_READ_TIMEOUT, SelectedProtocol, SelectedTransferType
 from lib.exceptions import ExternalConnectionClosed
 from lib.file_handling import FileHandler
 from lib.segment_encoding.application_header import ApplicationHeaderRDT
@@ -37,12 +37,12 @@ class ServerRDT:
             client_thread = Thread(target=self.individual_connection_handler,
                                    args=(accepter,))
             self.client_threads.append(client_thread)
+            logging.debug(">>>>>>>>>>>>>> NEW THREAD CREATED <<<<<<<<<<<<<<<<")
             client_thread.start()
 
             for thread in self.client_threads:
                 if not thread.is_alive():
                     self.client_threads.remove(thread)
-                thread.join()
 
         logging.debug("joining threads")
         for thread in self.client_threads:
@@ -51,7 +51,6 @@ class ServerRDT:
     def individual_connection_handler(
             self, accepter: AccepterRDT
     ):
-
         try:
             stream = accepter.accept()
         except Exception as e:
@@ -82,8 +81,6 @@ class ServerRDT:
 
     def handle_transfer_by_type(self, stream, transfer_type, file_name, initial_data, app_header):
         if transfer_type == SelectedTransferType.UPLOAD:
-            # the receiving side must have a longer timeout than the sending side because the sending side will be reading the file from disk
-            stream.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
             if len(initial_data) > ApplicationHeaderRDT.size():
                 start_of_user_data = initial_data[ApplicationHeaderRDT.size():]
             else:
@@ -94,7 +91,6 @@ class ServerRDT:
                 stream, file_name, remaining_file_size, start_of_user_data
             )
         elif transfer_type == SelectedTransferType.DOWNLOAD:
-            stream.settimeout(DEFAULT_SOCKET_RECV_TIMEOUT)
             self.handle_download_request(stream, file_name)
 
     def handle_download_request(self, stream, file_name):
@@ -156,14 +152,13 @@ class ServerRDT:
                 f"The file: {file_name}  requested to upload from client: ({stream.external_host}:{stream.external_port}) exceeds the maximum file size allowed"
             )
             file.close()
-            stream.close()
             return
 
         try:
-            file.write(start_of_user_data)
+            if (len(start_of_user_data) > 0):
+                file.write(start_of_user_data)
         except Exception as e:
             file.close()
-            stream.close()
             raise e
 
         while remaining_file_size > 0:
@@ -175,20 +170,17 @@ class ServerRDT:
                 break
             except Exception as e:
                 file.close()
-                stream.close()
                 raise e
 
-        if remaining_file_size > 0:
-            logging.error(
-                f"Client: ({stream.external_host}:{stream.external_port}) closed the connection before sending the entire file"
-            )
-            file.close()
-            # delete the written file with the os library
-            os.remove(file_path)
-            stream.close()
-            return
+        # if remaining_file_size > 0:
+        #     logging.error(
+        #         f"Client: ({stream.external_host}:{stream.external_port}) closed the connection before sending the entire file"
+        #     )
+        #     file.close()
+        #     # delete the written file with the os library
+        #     os.remove(file_path)
+        #     stream.close()
+        #     return
 
         file.close()
         logging.info(f"Successfully received file: {file_name}")
-
-        stream.close()
