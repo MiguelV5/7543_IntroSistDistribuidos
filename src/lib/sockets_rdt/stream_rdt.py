@@ -149,7 +149,9 @@ class StreamRDT():
 
         segment = SegmentRDT.from_bytes(segment_as_bytes)
         logging.debug(f"[READ SEGMENT] Received segment {segment}")
-
+        if (expected_syn is True and segment.header.syn is False):
+            raise AssumeAlreadyConnectedError(
+                "[READ SEGMENT] Invalid segment received: SYN flag not set")
         if (expected_syn != segment.header.syn):
             raise ValueError(
                 "[READ SEGMENT] Invalid segment received: SYN flag set")
