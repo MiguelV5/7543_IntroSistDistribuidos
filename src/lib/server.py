@@ -103,6 +103,5 @@ class ServerRDT:
         uploader.run()
 
     def download(self, stream, file_handler, start_of_user_data):
-
         downloader = Downloader(stream, file_handler)
         downloader.run(start_of_user_data)
