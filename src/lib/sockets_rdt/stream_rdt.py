@@ -174,7 +174,8 @@ class StreamRDT():
             segment.as_bytes(),
             (self.external_host, self.external_port)
         )
-        logging.debug(f"[SEND SEGMENT] Sending segment {segment}")
+        logging.debug(
+            f"[SEND SEGMENT] Sending segment with Header: {segment.header}")
 
     # ---- Handshake related ----
 

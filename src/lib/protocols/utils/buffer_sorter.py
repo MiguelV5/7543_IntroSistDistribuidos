@@ -1,6 +1,3 @@
-import logging
-
-
 class BufferSorter:
 
     def __repr__(self):
@@ -26,13 +23,11 @@ class BufferSorter:
         self.buffer[seg_position] = (received_seq_num, data)
 
     def pop_available_data(self):
-        logging.debug(f"[BUFFER SORTER] Buffer before pop: {self}")
         data_popped = b''
         last_ack_num = self.curr_ack_num
         while self._has_available_segment_to_pop():
             last_ack_num, data = self._pop_first_available_segment()
             data_popped = data_popped + data
-        logging.debug(f"[BUFFER SORTER] Buffer after pop: {self}")
         return last_ack_num, data_popped
 
     def _pop_first_available_segment(self):
