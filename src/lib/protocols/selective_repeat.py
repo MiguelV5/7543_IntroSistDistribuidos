@@ -100,7 +100,7 @@ class SelectiveRepeat:
         window.set_sent(sent_seq_num, True)
 
     def _send_ack(self, received_segment):
-        if (received_segment.data is None):
+        if (len(received_segment.data) == 0):
             return
         self.stream.send_segment(
             b'', self.stream.seq_num, received_segment.header.seq_num, False, False)
