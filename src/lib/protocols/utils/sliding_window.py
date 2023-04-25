@@ -62,7 +62,7 @@ class SlidingWindow:
 
     def has_available_segments_to_send(self):
         i = self.current_seq_num
-        while (i <= self.final_seq_num) and (i < self.current_seq_num + self.window_size):
+        while (i < self.final_seq_num):
             if self.is_available_segment_to_send(i):
                 return True
             i += 1
@@ -73,7 +73,7 @@ class SlidingWindow:
 
     def get_first_available_segment(self):
         i = self.current_seq_num
-        while (i <= self.final_seq_num) and (i < self.current_seq_num + self.window_size):
+        while (i < self.final_seq_num):
             if self.is_available_segment_to_send(i):
                 return i, self.data[i - self.current_seq_num]
             i += 1
