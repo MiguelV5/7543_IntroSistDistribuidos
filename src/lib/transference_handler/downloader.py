@@ -43,9 +43,11 @@ class Downloader():
             logging.info(
                 f"[DOWNLOADER] New Data Received: {new_data}")
             logging.info(
-                f"[DOWNLOADER] Data size: {len(new_data)}")
-            if (new_data is None):
+                f"[DOWNLOADER] Data size: {data_size}")
+            logging.info(
+                f"[DOWNLOADER] Data read: {len(new_data)}")
+            if (new_data is not None):
                 data = data + new_data
                 data_size += len(new_data)
-        if (len(data) != 0):
+        if (data is not None and len(data) != 0):
             self.file_handler.write(data)
