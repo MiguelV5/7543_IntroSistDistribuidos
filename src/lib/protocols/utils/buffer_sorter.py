@@ -25,18 +25,19 @@ class BufferSorter:
     def pop_available_data(self):
         logging.debug(f"[BUFFER SORTER] Buffer before pop: {self}")
         data_popped = b''
+        last_ack_num = self.curr_ack_num
         while self._has_available_segment_to_pop():
-            data = self._pop_first_available_segment()
+            last_ack_num, data = self._pop_first_available_segment()
             data_popped = data_popped + data
         logging.debug(f"[BUFFER SORTER] Buffer after pop: {self}")
-        return self.curr_ack_num - 1, data_popped
+        return last_ack_num, data_popped
 
     def _pop_first_available_segment(self):
         if (self._has_available_segment_to_pop() is False):
-            return None
-        seq_num, data = self.buffer.pop(0)
-        self.curr_ack_num = seq_num + 1
-        return data
+            return self.curr_ack_num, None
+        ack_num, data = self.buffer.pop(0)
+        self.curr_ack_num = ack_num + 1
+        return ack_num, data
 
     def _has_available_segment_to_pop(self):
         return len(self.buffer) != 0 and \
