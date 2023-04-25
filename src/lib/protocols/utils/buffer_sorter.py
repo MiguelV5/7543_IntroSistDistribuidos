@@ -29,7 +29,7 @@ class BufferSorter:
             data = self._pop_first_available_segment()
             data_popped = data_popped + data
         logging.debug(f"[BUFFER SORTER] Buffer after pop: {self}")
-        return self.curr_ack_num, data_popped
+        return self.curr_ack_num - 1, data_popped
 
     def _pop_first_available_segment(self):
         if (self._has_available_segment_to_pop() is False):
