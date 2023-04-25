@@ -30,7 +30,7 @@ function p_fiubardt.dissector (buf, pkt, root)
   local subtree = root:add(p_fiubardt, buf(0))
   -- add protocol fields to subtree
   -- the protocol field is the first byte and is a uint8 denoting 0 or 1 for stop and wait or selective repeat
-  local protocol_int = buf(0,1):le_uint()
+  local protocol_int = buf(0,1)
   local protocol_str = "Unknown"
   if protocol_int == 0 then
     protocol_str = "Stop and Wait"
@@ -38,13 +38,13 @@ function p_fiubardt.dissector (buf, pkt, root)
     protocol_str = "Selective Repeat"
   end
 
-  subtree:add_le(Protocol, buf(0,1)):append_text(" (" .. protocol_str .. ")")
-  subtree:add_le(Data_size, buf(1,4))
-  subtree:add_le(Seq_num, buf(5,4))
-  subtree:add_le(Ack_num, buf(9,4))
-  subtree:add_le(Syn, buf(13,1))
-  subtree:add_le(Fin, buf(14,1))
-  subtree:add_le(Checksum, buf(15,1))
+  subtree:add(Protocol, buf(0,1)):append_text(" (" .. protocol_str .. ")")
+  subtree:add(Data_size, buf(1,4))
+  subtree:add(Seq_num, buf(5,4))
+  subtree:add(Ack_num, buf(9,4))
+  subtree:add(Syn, buf(13,1))
+  subtree:add(Fin, buf(14,1))
+  subtree:add(Checksum, buf(15,1))
 end
 
 -- Initialization routine
