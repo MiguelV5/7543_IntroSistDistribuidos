@@ -46,8 +46,9 @@ class ListenerRDT():
                 logging.error("Invalid segment received: {}".format(e))
                 continue
 
+        logging.info(
+            "[HANDSHAKE] Conection attempt from {}".format(external_address))
         logging.debug("[HANDSHAKE] LISTENER 1 (read)")
-        logging.info("Conection attempt from {}".format(external_address))
 
         return AccepterRDT(self, segment, external_address)
 
@@ -69,7 +70,7 @@ class AccepterRDT():
             self.first_segment, self.host
         )
 
-        logging.info("Connection established with ({}:{})".format(
+        logging.info("[LISTENER] Connection established with ({}:{})".format(
             self.external_host, self.external_port)
         )
 

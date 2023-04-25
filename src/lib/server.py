@@ -60,6 +60,9 @@ class ServerRDT:
 
             app_header_bytes = initial_data[:ApplicationHeaderRDT.size()]
             app_header = ApplicationHeaderRDT.from_bytes(app_header_bytes)
+
+            logging.debug(f"[PORT HANDLER] Received App Header:{app_header}")
+
         except Exception as e:
             logging.error(
                 "[PORT HANDLER] Error starting connection: " + str(e))
@@ -86,9 +89,10 @@ class ServerRDT:
             logging.error(
                 "[PORT HANDLER] Error handling transference: " + str(e))
         finally:
-            file_handler.close()
-            stream.close()
-            return
+            if (file_handler):
+                file_handler.close()
+            if (stream):
+                stream.close()
 
     def upload(self, stream, file_handler):
         if FileHandler.file_exists(file_handler.get_file_path()) is False:

@@ -9,14 +9,18 @@ class SlidingWindow:
     def __str__(self):
         return self.__repr__()
 
-    def __init__(self, data, window_size, initial_seq_num=0):
+    def __init__(self, window_size, initial_seq_num=0):
         self.window_size = window_size
-        self.data = data
+        self.data = []
         self.current_seq_num = initial_seq_num
-        self.final_seq_num = initial_seq_num + len(data) - 1
+        self.final_seq_num = initial_seq_num + len(self.data) - 1
 
         self.ack_list = [False for _ in range(self.window_size)]
         self.sent_list = [False for _ in range(self.window_size)]
+
+    def add_data(self, data):
+        self.final_seq_num = self.final_seq_num + len(data)
+        self.data += data
 
     def get_ack(self, received_ack):
         return self.ack_list[received_ack - self.current_seq_num]
@@ -55,14 +59,14 @@ class SlidingWindow:
         self.sent_list[seq_num - self.current_seq_num] = value
 
     def finished(self):
-        return self.current_seq_num == self.final_seq_num + 1
+        return self.current_seq_num > self.final_seq_num
 
     def is_available_segment_to_send(self, seq_num):
         return (self.get_sent(seq_num) is False) and (self.get_ack(seq_num) is False)
 
     def has_available_segments_to_send(self):
         i = self.current_seq_num
-        while (i < self.final_seq_num):
+        while (i <= self.final_seq_num) and (i < self.current_seq_num + self.window_size):
             if self.is_available_segment_to_send(i):
                 return True
             i += 1
@@ -73,7 +77,7 @@ class SlidingWindow:
 
     def get_first_available_segment(self):
         i = self.current_seq_num
-        while (i < self.final_seq_num):
+        while (i <= self.final_seq_num) and (i < self.current_seq_num + self.window_size):
             if self.is_available_segment_to_send(i):
                 return i, self.data[i - self.current_seq_num]
             i += 1

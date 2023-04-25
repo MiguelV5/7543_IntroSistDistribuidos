@@ -33,8 +33,10 @@ class ClientRDT:
             logging.error("[CLIENT UPLOAD] Error uploading file: " + str(e))
             exit(1)
         finally:
-            file_handler.close()
-            stream.close()
+            if (file_handler):
+                file_handler.close()
+            if (stream):
+                stream.close()
 
     def download(self, file_path, file_name):
         try:
@@ -48,7 +50,10 @@ class ClientRDT:
                 (), 0
             )
             stream.send(app_header.as_bytes())
+            logging.info(f"[CLIENT DOWNLOAD] Sending App Header: {app_header}")
+
             initial_data = stream.read()
+            logging.info(f"[CLIENT DOWNLOAD] Receiving Data: {initial_data}")
 
             downloader = Downloader(stream, file_handler)
             downloader.run(initial_data)
@@ -56,5 +61,7 @@ class ClientRDT:
             logging.error(
                 "[CLIENT DOWNLOAD] Error downloading file: " + str(e))
         finally:
-            file_handler.close()
-            stream.close()
+            if (file_handler):
+                file_handler.close()
+            if (stream):
+                stream.close()

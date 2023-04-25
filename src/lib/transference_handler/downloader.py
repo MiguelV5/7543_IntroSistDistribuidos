@@ -43,7 +43,7 @@ class Downloader():
             logging.info(
                 f"[DOWNLOADER] New Data Received: {new_data}")
             logging.info(
-                f"[DOWNLOADER] Data size: {data_size}")
+                f"[DOWNLOADER] Data size: {len(new_data)}")
             if (new_data is None):
                 data = data + new_data
                 data_size += len(new_data)

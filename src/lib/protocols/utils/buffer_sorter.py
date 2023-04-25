@@ -13,6 +13,9 @@ class BufferSorter:
         self.curr_ack_num = initial_ack_num
         self.buffer = []
 
+    def set_ack_num(self, ack_num):
+        self.curr_ack_num = ack_num
+
     def add_segment(self, received_seq_num, data):
         seg_position = received_seq_num - self.curr_ack_num
         if seg_position < 0:

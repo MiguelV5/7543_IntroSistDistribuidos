@@ -193,6 +193,7 @@ class StreamRDT():
         self.external_host = external_address[0]
         self.external_port = external_address[1]
         self.ack_num = segment.header.seq_num
+        self.protocol.buffer_sorter.set_ack_num(self.ack_num)
 
         if self.seq_num != segment.header.ack_num:
             raise ValueError("[HANDSHAK READ] Invalid handshake")
