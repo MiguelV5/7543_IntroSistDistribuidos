@@ -38,23 +38,23 @@ class ClientRDT:
 
     def download(self, file_path, file_name):
         try:
-            file = FileHandler(file_path, file_name, "wb")
+            file_handler = FileHandler(file_path, file_name, "wb")
 
             stream = StreamRDT.connect(
                 self.protocol, self.external_host, self.external_port,
             )
             app_header = ApplicationHeaderRDT(
-                SelectedTransferType.DOWNLOAD, file.get_file_name
+                SelectedTransferType.DOWNLOAD, file_handler.get_file_name
                 (), 0
             )
             stream.send(app_header.as_bytes())
             initial_data = stream.read()
 
-            downloader = Downloader(stream, file)
+            downloader = Downloader(stream, file_handler)
             downloader.run(initial_data)
         except Exception as e:
             logging.error(
                 "[CLIENT DOWNLOAD] Error downloading file: " + str(e))
         finally:
-            file.close()
+            file_handler.close()
             stream.close()

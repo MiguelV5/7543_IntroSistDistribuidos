@@ -15,6 +15,8 @@ class Uploader():
     def run(self):
         logging.info(
             f"[UPLOADER] Starting upload of file: {self.file_handler.get_file_name()}")
+        logging.info(
+            f"[UPLOADER] Starting upload of size: {self.file_handler.size()}")
         if FileHandler.file_exists(self.file_handler.get_file_path()) is False:
             raise ValueError("[UPLOADER] File doesn't exists")
 

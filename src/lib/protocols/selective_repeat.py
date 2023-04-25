@@ -2,6 +2,7 @@ import logging
 from lib.protocols.utils.buffer_sorter import BufferSorter
 
 from lib.protocols.utils.sliding_window import SlidingWindow
+from lib.utils.exceptions import ExternalConnectionClosed
 
 
 class SelectiveRepeat:
@@ -34,6 +35,8 @@ class SelectiveRepeat:
                     continue
                 except ValueError:
                     continue
+                except ExternalConnectionClosed:
+                    break
 
             self._send_segment(window)
 
@@ -65,6 +68,8 @@ class SelectiveRepeat:
                 continue
             except ValueError:
                 continue
+            except ExternalConnectionClosed:
+                break
 
             self._send_ack(buffer_sorter, received_segment)
             logging.debug(
