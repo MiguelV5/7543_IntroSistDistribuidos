@@ -30,7 +30,7 @@ function p_fiubardt.dissector (buf, pkt, root)
   local subtree = root:add(p_fiubardt, buf(0))
   -- add protocol fields to subtree
   -- the protocol field is the first byte and is a uint8 denoting 0 or 1 for stop and wait or selective repeat
-  local protocol_int = buf(0,1)
+  local protocol_int = buf(0,1):uint()
   local protocol_str = "Unknown"
   if protocol_int == 0 then
     protocol_str = "Stop and Wait"
