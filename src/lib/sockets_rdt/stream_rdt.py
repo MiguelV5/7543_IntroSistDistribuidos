@@ -174,7 +174,6 @@ class StreamRDT():
             segment.as_bytes(),
             (self.external_host, self.external_port)
         )
-
         logging.debug(f"[SEND SEGMENT] Sending segment {segment}")
 
     # ---- Handshake related ----
@@ -233,10 +232,10 @@ class StreamRDT():
             except (ValueError, TimeoutError):
                 retries += 1
 
-        logging.error("Connection exhausted {} retries".format(
+        logging.error("[HANDSHAKE] Connection exhausted {} retries".format(
             self.MAX_INITIATOR_HANDSHAKE_TIMEOUT_RETRIES))
         raise TimeoutError(
-            "Connection not established after {} retries".format(
+            "[HANDSHAKE] Connection not established after {} retries".format(
                 self.MAX_INITIATOR_HANDSHAKE_TIMEOUT_RETRIES)
         )
 
@@ -253,10 +252,10 @@ class StreamRDT():
             except (ValueError, TimeoutError):
                 retries += 1
 
-        logging.error("Connection exhausted {} retries".format(
+        logging.error("[HANDSHAKE] Connection exhausted {} retries".format(
             self.MAX_LISTENER_HANDSHAKE_TIMEOUT_RETRIES))
         raise TimeoutError(
-            "Connection not established after {} retries".format(
+            "[HANDSHAKE] Connection not established after {} retries".format(
                 self.MAX_LISTENER_HANDSHAKE_TIMEOUT_RETRIES)
         )
 
@@ -311,10 +310,10 @@ class StreamRDT():
                 continue
 
         logging.error("[CLOSE] Connection exhausted {} retries".format(
-            self.MAX_INITIATOR_CLOSE_RETRIES))
+            self.MAX_RECEIVER_CLOSE_RETRIES))
         raise TimeoutError(
-            "[CLOSE] Connection not established after {} retries".format(
-                self.MAX_INITIATOR_CLOSE_RETRIES)
+            "[CLOSE] Connection exhausted {} retries".format(
+                self.MAX_RECEIVER_CLOSE_RETRIES)
         )
 
     def _run_close_as_receiver(self):
@@ -337,6 +336,6 @@ class StreamRDT():
         logging.error("[CLOSE] Connection exhausted {} retries".format(
             self.MAX_RECEIVER_CLOSE_RETRIES))
         raise TimeoutError(
-            "[CLOSE] Connection not established after {} retries".format(
+            "[CLOSE] Connection exhausted {} retries".format(
                 self.MAX_RECEIVER_CLOSE_RETRIES)
         )

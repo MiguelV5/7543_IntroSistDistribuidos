@@ -1,4 +1,3 @@
-import logging
 from lib.protocols.utils.buffer_sorter import BufferSorter
 
 from lib.protocols.utils.sliding_window import SlidingWindow
@@ -21,9 +20,7 @@ class SelectiveRepeat:
     # ======================== FOR PUBLIC USE ========================
 
     def send(self, data_segments):
-        logging.debug(f"[PROTOCOL] Window before adding data: {self.window}")
         self.window.add_data(data_segments)
-        logging.debug(f"[PROTOCOL] Window after adding data: {self.window}")
         retries = 0
         while not self.window.finished() and retries < SelectiveRepeat.MAX_TIMEOUT_RETRIES:
             if not self.window.has_available_segments_to_send():
@@ -74,13 +71,7 @@ class SelectiveRepeat:
                 break
 
             self._send_ack(received_segment)
-            logging.debug(
-                f"[PROTOCOL] Stream ack before pop: {self.stream.ack_num}")
-
             self.stream.ack_num, data = self.buffer_sorter.pop_available_data()
-
-            logging.debug(
-                f"[PROTOCOL] Stream ack after pop: {self.stream.ack_num}")
             return data
 
         if retries >= SelectiveRepeat.MAX_TIMEOUT_RETRIES:

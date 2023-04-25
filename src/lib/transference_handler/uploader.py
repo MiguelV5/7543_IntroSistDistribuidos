@@ -13,13 +13,11 @@ class Uploader():
         return SelectedTransferType.UPLOAD
 
     def run(self):
-        logging.info(
-            f"[UPLOADER] Starting upload of file: {self.file_handler.get_file_name()}")
-        logging.info(
-            f"[UPLOADER] Starting upload of size: {self.file_handler.size()}")
+        logging.info("[UPLOADER] Checking file existence")
         if FileHandler.file_exists(self.file_handler.get_file_path()) is False:
-            raise ValueError("[UPLOADER] File doesn't exists")
+            raise ValueError("[UPLOADER] File doesn't exist")
 
+        logging.info("[UPLOADER] Sending application header")
         app_header = ApplicationHeaderRDT(
             self.transfer_type(), self.file_handler.get_file_name(), self.file_handler.size()
         )
@@ -27,6 +25,9 @@ class Uploader():
 
         chunk_size = FileHandler.MAX_RW_SIZE
 
+        logging.info("[UPLOADER] Sending file data in chunks")
         for _ in range(0, self.file_handler.size(), chunk_size):
             data = self.file_handler.read(chunk_size)
             self.stream.send(data)
+
+        logging.info("[UPLOADER] Upload finished, closing connection")

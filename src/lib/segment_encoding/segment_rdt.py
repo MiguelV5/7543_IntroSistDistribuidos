@@ -5,8 +5,8 @@ class SegmentRDT:
     MAX_DATA_SIZE = 1024
 
     def __repr__(self):
-        return "SegmentRDT(header={}, data={})".format(
-            self.header, self.data)
+        return "SegmentRDT(header={}, data_size={})".format(
+            self.header, len(self.data))
 
     def __str__(self):
         return self.__repr__()

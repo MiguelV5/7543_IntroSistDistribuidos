@@ -14,40 +14,29 @@ class Downloader():
         return SelectedTransferType.DOWNLOAD
 
     def run(self, initial_data):
-        logging.info(
-            f"[DOWNLOADER] Starting download of file: {self.file_handler.get_file_name()}")
-
+        logging.info("[DOWNLOADER] Decoding application header")
         app_header_bytes = initial_data[:ApplicationHeaderRDT.size()]
         app_header = ApplicationHeaderRDT.from_bytes(app_header_bytes)
 
+        logging.info("[DOWNLOADER] Checking file existence")
         if app_header.file_name != self.file_handler.get_file_name() or app_header.file_size == 0:
             raise ValueError(
                 f"[DOWNLOADER] Requested file does not exist: {app_header.file_name}"
             )
 
-        logging.info("[DOWNLOADER] Application Header received")
-
+        logging.info("[DOWNLOADER] Reading file data by chunks")
         data = initial_data[ApplicationHeaderRDT.size():]
         data_size = len(data)
 
-        logging.info(
-            f"[DOWNLOADER] New Data Received: {data}")
-
         while data_size < app_header.file_size:
-            logging.info(
-                f"[DOWNLOADER] Data size: {data_size}")
             if (data_size >= self.file_handler.MAX_RW_SIZE):
                 self.file_handler.write(data[:self.file_handler.MAX_RW_SIZE])
                 data = data[self.file_handler.MAX_RW_SIZE:]
             new_data = self.stream.read()
-            logging.info(
-                f"[DOWNLOADER] New Data Received: {new_data}")
-            logging.info(
-                f"[DOWNLOADER] Data size: {data_size}")
-            logging.info(
-                f"[DOWNLOADER] Data read: {len(new_data)}")
             if (new_data is not None):
                 data = data + new_data
                 data_size += len(new_data)
         if (data is not None and len(data) != 0):
             self.file_handler.write(data)
+
+        logging.info("[DOWNLOADER] Download finished, closing connection")

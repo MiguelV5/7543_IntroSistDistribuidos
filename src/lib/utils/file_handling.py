@@ -10,7 +10,7 @@ from lib.utils.exceptions import FileHandlerError
 class FileHandler:
 
     ALL_DATA = -1
-    MAX_RW_SIZE = 1024  # 2**16
+    MAX_RW_SIZE = 2**16
 
     def __init__(self, file_path: str, file_name: str, mode: str):
         self.file_path = file_path

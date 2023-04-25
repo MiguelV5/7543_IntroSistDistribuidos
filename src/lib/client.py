@@ -20,9 +20,18 @@ class ClientRDT:
         self.protocol = protocol
 
     def upload(self, file_path, file_name):
+        logging.info(
+            f"[CLIENT UPLOAD] Starting upload from file path: {file_path}")
+        logging.info(
+            f"[CLIENT UPLOAD] Starting upload with file name: {file_name}")
+
+        file_handler = None
+        stream = None
         try:
+            logging.info("[CLIENT UPLOAD] Opening file to upload")
             file_handler = FileHandler(file_path, file_name, "rb")
 
+            logging.info("[CLIENT UPLOAD] Connecting to server")
             stream = StreamRDT.connect(
                 self.protocol, self.external_host, self.external_port,
             )
@@ -39,21 +48,32 @@ class ClientRDT:
                 stream.close()
 
     def download(self, file_path, file_name):
+        logging.info(
+            f"[CLIENT DOWNLOAD] Starting download from file path: {file_path}")
+        logging.info(
+            f"[CLIENT DOWNLOAD] Starting download with file name: {file_name}")
+
+        file_handler = None
+        stream = None
         try:
+            logging.info("[CLIENT DOWNLOAD] Creating file to download")
             file_handler = FileHandler(file_path, file_name, "wb")
 
+            logging.info("[CLIENT UPLOAD] Connecting to server")
             stream = StreamRDT.connect(
                 self.protocol, self.external_host, self.external_port,
             )
+
             app_header = ApplicationHeaderRDT(
                 SelectedTransferType.DOWNLOAD, file_handler.get_file_name
                 (), 0
             )
+            logging.info(
+                f"[CLIENT DOWNLOAD] Sending Application Header: {app_header}")
             stream.send(app_header.as_bytes())
-            logging.info(f"[CLIENT DOWNLOAD] Sending App Header: {app_header}")
 
             initial_data = stream.read()
-            logging.info(f"[CLIENT DOWNLOAD] Receiving Data: {initial_data}")
+            logging.info(f"[CLIENT DOWNLOAD] Receiving data: {initial_data}")
 
             downloader = Downloader(stream, file_handler)
             downloader.run(initial_data)
