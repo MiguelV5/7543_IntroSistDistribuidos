@@ -88,11 +88,13 @@ def _get_parser_with_common_args(command_description: str):
         "-saw",
         "--stop_and_wait",
         action='store_true',
+        default=True,
         help="choose Stop and Wait transference")
     exclusive_group2.add_argument(
         "-sr",
         "--selective_repeat",
         action='store_true',
+        default=False,
         help="choose Selective Repeat transference")
 
     return parser

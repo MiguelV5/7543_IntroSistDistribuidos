@@ -19,7 +19,7 @@ class CustomizedFormatter(logging.Formatter):
 
     FORMATS = {
         logging.INFO:
-        f"%(asctime)s - {COLOR_BLUE}| %(levelname)s |{NO_COLOR} - %(message)s",
+        f"%(asctime)s - {COLOR_BLUE}| %(levelname)s  |{NO_COLOR} - %(message)s",
         logging.DEBUG:
         f"%(asctime)s - {COLOR_GREEN}| %(levelname)s |{NO_COLOR} - %(message)s\
         (%(filename)s:%(lineno)d)",
