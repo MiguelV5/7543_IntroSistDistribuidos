@@ -6,7 +6,7 @@ from lib.utils.exceptions import ExternalConnectionClosed
 
 class SelectiveRepeat:
 
-    MAX_TIMEOUT_RETRIES = 5
+    MAX_TIMEOUT_RETRIES = 100
 
     def __init__(self, stream, window_size, mss: int):
         self.stream = stream
