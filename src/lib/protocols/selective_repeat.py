@@ -6,7 +6,7 @@ from lib.utils.exceptions import ExternalConnectionClosed
 
 class SelectiveRepeat:
 
-    MAX_TIMEOUT_RETRIES = 100
+    MAX_TIMEOUT_RETRIES = 15
 
     def __init__(self, stream, window_size, mss: int):
         self.stream = stream
@@ -30,6 +30,7 @@ class SelectiveRepeat:
                     self._update_protocol(
                         received_segment, external_address, self.window)
                     self._send_ack(received_segment)
+                    retries = 0
                     continue
                 except TimeoutError:
                     self.window.reset_sent_segments()
@@ -62,6 +63,7 @@ class SelectiveRepeat:
             try:
                 received_segment, _ = self.stream.read_segment(
                     True)
+                retries = 0
             except TimeoutError:
                 retries += 1
                 continue

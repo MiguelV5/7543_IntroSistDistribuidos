@@ -33,7 +33,7 @@ class Downloader():
                 self.file_handler.write(data[:self.file_handler.MAX_RW_SIZE])
                 data = data[self.file_handler.MAX_RW_SIZE:]
             new_data = self.stream.read()
-            if (new_data is not None):
+            if (new_data is not None) and (new_data != b''):
                 data = data + new_data
                 data_size += len(new_data)
         if (data is not None and len(data) != 0):
