@@ -1,7 +1,6 @@
 from lib.protocols.utils.buffer_sorter import BufferSorter
 
 from lib.protocols.utils.sliding_window import SlidingWindow
-from lib.utils.exceptions import ExternalConnectionClosed
 
 
 class SelectiveRepeat:
@@ -38,8 +37,6 @@ class SelectiveRepeat:
                     continue
                 except ValueError:
                     continue
-                except ExternalConnectionClosed:
-                    break
 
             self._send_segment(self.window)
 
@@ -69,8 +66,6 @@ class SelectiveRepeat:
                 continue
             except ValueError:
                 continue
-            except ExternalConnectionClosed:
-                break
 
             self._send_ack(received_segment)
             self.stream.ack_num, data = self.buffer_sorter.pop_available_data()
