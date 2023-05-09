@@ -30,7 +30,7 @@ Primer Cuatrimestre - 2023
 <br>
 <p align="center">
 <font size="+3">
-GRUPO 3
+GRUPO 2
 </font>
 <br>
 <font size="+2">
