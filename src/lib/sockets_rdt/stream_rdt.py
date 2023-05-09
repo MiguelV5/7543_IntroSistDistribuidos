@@ -14,13 +14,13 @@ class StreamRDT():
     START_LISTENER_SEQ = 1000
     START_CONNECT_SEQ = 2000
 
-    MAX_INITIATOR_HANDSHAKE_TIMEOUT_RETRIES = 4
-    MAX_LISTENER_HANDSHAKE_TIMEOUT_RETRIES = 8
+    MAX_INITIATOR_HANDSHAKE_TIMEOUT_RETRIES = 10  # 4
+    MAX_LISTENER_HANDSHAKE_TIMEOUT_RETRIES = 12  # 8
 
-    MAX_READ_TIMEOUT_RETRIES = 3
+    MAX_READ_TIMEOUT_RETRIES = 8  # 3
 
-    MAX_INITIATOR_CLOSE_RETRIES = 6
-    MAX_RECEIVER_CLOSE_RETRIES = 4
+    MAX_INITIATOR_CLOSE_RETRIES = 10  # 6
+    MAX_RECEIVER_CLOSE_RETRIES = 8  # 4
 
     def __init__(self, selected_protocol, external_host, external_port,
                  seq_num, ack_num, host, port=None):
@@ -94,7 +94,7 @@ class StreamRDT():
         try:
             self._run_close_as_initiator()
         except Exception as e:
-            logging.error(
+            logging.debug(
                 f"[CLOSE] Error while closing connection: {str(e)}")
         self.socket.close()
 
@@ -310,7 +310,7 @@ class StreamRDT():
                 retries += 1
                 continue
 
-        logging.error("[CLOSE] Connection exhausted {} retries".format(
+        logging.debug("[CLOSE] Connection exhausted {} retries".format(
             self.MAX_RECEIVER_CLOSE_RETRIES))
         raise TimeoutError(
             "[CLOSE] Connection exhausted {} retries".format(
@@ -334,7 +334,7 @@ class StreamRDT():
                 retries += 1
                 continue
 
-        logging.error("[CLOSE] Connection exhausted {} retries".format(
+        logging.debug("[CLOSE] Connection exhausted {} retries".format(
             self.MAX_RECEIVER_CLOSE_RETRIES))
         raise TimeoutError(
             "[CLOSE] Connection exhausted {} retries".format(

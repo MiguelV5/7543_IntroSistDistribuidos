@@ -31,7 +31,7 @@ class ListenerRDT():
 
     def listen(self):
         while True:
-            logging.info("Listening for incoming connections")
+            logging.info("[LISTENER] Listening for incoming connections")
             try:
                 data, external_address = self.socket.recvfrom(
                     HeaderRDT.size() + ApplicationHeaderRDT.size())

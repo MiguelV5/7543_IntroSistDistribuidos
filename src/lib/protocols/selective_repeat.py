@@ -1,12 +1,11 @@
 from lib.protocols.utils.buffer_sorter import BufferSorter
 
 from lib.protocols.utils.sliding_window import SlidingWindow
-from lib.utils.exceptions import ExternalConnectionClosed
 
 
 class SelectiveRepeat:
 
-    MAX_TIMEOUT_RETRIES = 5
+    MAX_TIMEOUT_RETRIES = 15
 
     def __init__(self, stream, window_size, mss: int):
         self.stream = stream
@@ -30,6 +29,7 @@ class SelectiveRepeat:
                     self._update_protocol(
                         received_segment, external_address, self.window)
                     self._send_ack(received_segment)
+                    retries = 0
                     continue
                 except TimeoutError:
                     self.window.reset_sent_segments()
@@ -37,8 +37,6 @@ class SelectiveRepeat:
                     continue
                 except ValueError:
                     continue
-                except ExternalConnectionClosed:
-                    break
 
             self._send_segment(self.window)
 
@@ -62,13 +60,12 @@ class SelectiveRepeat:
             try:
                 received_segment, _ = self.stream.read_segment(
                     True)
+                retries = 0
             except TimeoutError:
                 retries += 1
                 continue
             except ValueError:
                 continue
-            except ExternalConnectionClosed:
-                break
 
             self._send_ack(received_segment)
             self.stream.ack_num, data = self.buffer_sorter.pop_available_data()
