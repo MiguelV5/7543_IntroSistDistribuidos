@@ -33,11 +33,15 @@
 ## Introducción
 
 El presente trabajo práctico tiene como objetivo la creación de una aplicación de red que implemente transferencia de archivos
-entre cliente y servidor (multiples clientes).
-Para tal finalidad, será necesario comprender cómo se comunican los procesos a través de la red, y cuál es el modelo de servicio que la capa de transporte le ofrece a la capa de aplicación. Además se aprenderá el uso de la interfaz de
-sockets y los principios básicos de la transferencia de datos confiable (RDT).
+entre cliente y servidor (multiples clientes); para lo cual se pide particularmente utilizar sockets UDP, y diseñar e implementar un protocolo que emule los servicios RDT (reliable data transfer) para garantizar orden y recepción
+de paquetes que UDP no brinda.
+Para tal finalidad, será necesario comprender cómo se comunican los procesos a través de la red, y cuál es el modelo de servicio que la capa de transporte le ofrece a la capa de aplicación. 
+Además se aprenderá el uso de la interfaz de sockets y los principios básicos de la transferencia de datos confiable.
 
-## Para correr la topología:
+## Ejecución de la topología:
+
+Se utiliza el programa mininet para simular una topología de red con un host servidor, parametrizable por numero de clientes y un porcentaje de probabilidad de perdida de paquetes.
+
 ```bash
 sudo mn --custom ./src/topologia.py --topo customTopo,num_clients=4,loss_percent=10 --mac -x
 ```
