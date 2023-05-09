@@ -1,4 +1,4 @@
-# [75.06] Organizacion de Datos - Curso Rodriguez - 2c2022
+# [75.43] Introducción a Sistemas Distribuidos - Curso Hamelin - 1c2023
 
 ---
 
