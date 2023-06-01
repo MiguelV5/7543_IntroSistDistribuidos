@@ -2,9 +2,7 @@
 
 ## Clase 1: Introduccion a la materia
 
-Tema a tratar en clase:
-
-Teórica: Introducción a los temas centrales de la materia.
+- Introducción a los temas centrales de la materia.
 
 Correponde al Capítulo 1 del libro: 
 Computer Networking : A Top-Down Approach with Access 7th. James Kurose and Keith Ross. Publisher: Pearson Edition: 7th, 2016.
