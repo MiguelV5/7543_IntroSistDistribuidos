@@ -1,0 +1,1 @@
+TP para hacer (no es obligatorio): usar el comando “dig" con las opciones iterativa, autorizada y verborrágica capturando por la pantalla de la terminal y también mediante "Wireshark". Subirlo al Campus un informe en formato PDF.

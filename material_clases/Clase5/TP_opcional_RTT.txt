@@ -1,0 +1,1 @@
+Capturar la salida de un comando `ping' a cualquier host durante al menos 2 horas, y graficar su distribución en escala lineal y luego en escala log-log. Entregar un pequeño informe en PDF.

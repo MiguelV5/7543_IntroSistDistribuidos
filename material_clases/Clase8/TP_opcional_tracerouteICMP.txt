@@ -1,0 +1,1 @@
+Realizar un captura con el Wireshark de traceroute (si puede en IPv6) con las opciones TCP y luego con UDP, y realizar un informe en PDF.
