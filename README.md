@@ -14,7 +14,7 @@
 <br>
 <p align="center">
 <font size="+3">
-Repositorio con trabajos prácticos de la materia, parciales de práctica y material de clases traido del campus.
+Repositorio con trabajos prácticos de la materia, examenes de práctica y material de clases traido del campus.
 <br>
 ( Repo original para entrega TP1: <a href="https://github.com/lionelguglielmone/introDistribuidosTP">aquí</a> )
 
