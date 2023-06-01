@@ -28,26 +28,3 @@ Primer Cuatrimestre - 2023
 ---
 
 <br>
-<p align="center">
-<font size="+3">
-GRUPO 2
-</font>
-<br>
-<font size="+2">
-INTEGRANTES
-</font>
-<br>
-<font size="+1">
-<a href="https://github.com/lucianogamberale">Luciano Gamberale</a>, 
-<a href="https://github.com/MiguelV5">Miguel Vasquez</a>, 
-<a href="https://github.com/fmonpelat">Facundo Monpelat</a>, 
-<a href="https://github.com/erick12m">Erick Martinez</a>, 
-<a href="https://github.com/lionelguglielmone">Lionel Guglielmone</a>
-</font>
-
-</p>
-
-<br>
-
----
-
