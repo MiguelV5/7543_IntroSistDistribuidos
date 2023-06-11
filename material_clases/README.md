@@ -98,7 +98,7 @@ Libro capitulo 6 completo.
 ## Clase 11:
 
 
-Libro capitulo 7 hasta X inclusive.
+Libro capitulo 7 hasta 7.3 inclusive.
 
 ## Clase 12:
 
