@@ -102,18 +102,18 @@ Priorizar el orden alfabetico a la hora de subnetear bloques del mismo tamaño.
 
 | Subnet | # Hosts | Tamaño del bloque | Prefijo/mask |
 | :---:  | :---:    | :---:            | :---: | 
-| A | 100 | | 190. |
-| B | 62 | | 190. |
-| C | 100 | | 190. |
-| D | 60 | | 190. |
-| E | 100 | | 200. |
-| F | 30 | | 200. |
-| G | 20 | | 200. |
-| H | 10 | | 200. |
-| S13 | - | | 200. |
-| S23 | - | | 200. |
-| S34 | - | | 200. |
-| S35 | - | | 200. |
+| A | 100 | (...) | 190. (...)  |
+| B | 62 | (...) | 190. (...)  |
+| C | 100 | (...) | 190. (...)  |
+| D | 60 | (...) | 190. (...)  |
+| E | 100 | (...) | 200. (...)  |
+| F | 30 | (...) | 200. (...)  |
+| G | 20 | (...) | 200. (...)  |
+| H | 10 | (...) | 200. (...)  |
+| S13 | - | (...) | 200. (...)  |
+| S23 | - | (...) | 200. (...)  |
+| S34 | - | (...) | 200. (...)  |
+| S35 | - | (...) | 200. (...)  |
 
 
 ***b.***  Completar las siguientes tablas de ruteo para los routers R3 y R4 teniendo en cuenta las siguientes consideraciones:
@@ -127,15 +127,15 @@ Priorizar el orden alfabetico a la hora de subnetear bloques del mismo tamaño.
 
 | Prefijo | Mascara | Interfaz de salida |
 | :---: | :---: | :---: |
-| ... | ... | ... |
-| ... | ... | ... |
-| ... | ... | ... |
-| ... | ... | ... |
-| ... | ... | ... |
-| ... | ... | ... |
-| ... | ... | ... |
-| ... | ... | ... |
-| ... | ... | ... |
+| (...) | (...) | (...) |
+| (...) | (...) | (...) |
+| (...) | (...) | (...) |
+| (...) | (...) | (...) |
+| (...) | (...) | (...) |
+| (...) | (...) | (...) |
+| (...) | (...) | (...) |
+| (...) | (...) | (...) |
+| (...) | (...) | (...) |
 
 
 | R4 |
@@ -143,10 +143,10 @@ Priorizar el orden alfabetico a la hora de subnetear bloques del mismo tamaño.
 
 | Prefijo | Mascara | Interfaz de salida |
 | :---: | :---: | :---: |
-| ... | ... | ... |
-| ... | ... | ... |
-| ... | ... | ... |
-| ... | ... | ... |
+| (...) | (...) | (...) |
+| (...) | (...) | (...) |
+| (...) | (...) | (...) |
+| (...) | (...) | (...) |
 
 
 ***c.***  Teniendo en cuenta que la direccion de red se representa con todos los bits de host en 0 y la direccion de broadcast se representa con todos los bits de host en 1: Asignar una dirección IP posible para:
