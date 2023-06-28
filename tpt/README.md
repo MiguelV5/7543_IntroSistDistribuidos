@@ -1,9 +1,9 @@
 # Enunciado
 
-Se brinda un paper o un conjunto de RFCs sobre un tema específico de la materia, para realizar la 
+Se brinda un paper o un conjunto de RFCs relacionados a un tema específico de la materia, para realizar la 
 investigación correspondiente acerca del mismo y realizar su presentación en un video con duración estimada de 8 minutos.
 
-Más detalles sobre pautas de presentación son enviadas al correo del alumno.
+Más detalles sobre pautas de presentación son enviadas al correo electronico de los alumnos.
 
 ### Tema asignado: *Plano de Control (Capa de Red)*
 
