@@ -90,38 +90,25 @@ Libro capitulo 5 completo.
 
 Libro capitulo 6 hasta 6.3 inclusive.
 
-## Clase 10:
+## Clase 10: Capa de Enlace, parte II
 
+- LAN (Local Area Netwok)
+- Ethernet
+- VLANs
+- MPLS
 
 Libro capitulo 6 completo.
 
-## Clase 11:
+## Clase 11: Capa física inalambrica, parte I
 
+- LAN inalámbricas
+- Características físicas de los medios
+- WiFi: 802.11
 
 Libro capitulo 7 hasta 7.3 inclusive.
 
 ## Clase 12:
 
-
 Libro capitulo 7 completo.
-
-## Clase 13:
-
-
-Libro capitulo 8 hasta X inclusive.
-
-## Clase 14:
-
-
-Libro capitulo 8 completo.
-
-## Clase 15:
-
-
-Libro capitulo
-
-## Clase 16:
-
-Libro capitulo
 
 
