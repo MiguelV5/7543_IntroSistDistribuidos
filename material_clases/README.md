@@ -107,8 +107,8 @@ Libro capitulo 6 completo.
 
 Libro capitulo 7 hasta 7.3 inclusive.
 
-## Clase 12:
+## Clase 12: Presentaciones TPT (Capa seguridad) + Capa física inalambrica parte II
 
-Libro capitulo 7 completo.
+Libro capitulo 7 (y 8) completo.
 
 
